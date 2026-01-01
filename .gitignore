@@ -1,3 +1,28 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints
+
+# Environment
+.env/
+*.env
+.venv/
+venv/
+
+# Data
 data/test_labels.csv
 data/validation.csv
 
+# Submissions (optional: if you don't want old submissions in repo)
+submissions/*
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
