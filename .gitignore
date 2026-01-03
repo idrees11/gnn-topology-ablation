@@ -1,5 +1,3 @@
-# Private challenge labels (DO NOT PUBLISH)
-private_data/
 # Python cache files
 __pycache__/
 *.pyc
