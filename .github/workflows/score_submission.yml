@@ -39,6 +39,12 @@ jobs:
         run: |
           PRINTF "%s" "${{ secrets.TEST_LABELS }}" > private_labels.csv
 
+
+      - name: Debug TEST_LABELS file
+        run: |
+          ls -l
+          cat private_labels.csv
+
       # 6️⃣ Run scoring script
       - name: Run scoring script
         env:
