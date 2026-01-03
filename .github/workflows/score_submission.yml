@@ -25,21 +25,15 @@ jobs:
           pip install --upgrade pip
           pip install -r starter_code/requirements.txt
 
-      - name: Find submission file
-        id: submission
+      - name: Score submissions
+        env:
+          PRIVATE_TEST_LABELS: ${{ secrets.TEST_LABELS }}
         run: |
-          FILE=$(ls submissions/*.csv | head -n 1)
-          echo "file=$FILE" >> $GITHUB_OUTPUT
-
-      - name: Score submission
-        run: |
-          python scoring_script.py ${{ steps.submission.outputs.file }}
+          python scoring_script.py
 
       - name: Update leaderboard
         run: |
-          python update_leaderboard.py \
-            ${{ steps.submission.outputs.file }} \
-            ${{ github.actor }}
+          python update_leaderboard.py ${{ github.actor }}
 
       - name: Commit leaderboard update
         run: |
