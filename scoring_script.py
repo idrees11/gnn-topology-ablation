@@ -1,4 +1,3 @@
-# scoring_script.py
 import os
 import pandas as pd
 import io
@@ -10,9 +9,6 @@ from sklearn.metrics import f1_score
 
 # Environment variable containing private labels CSV (for GitHub Actions)
 PRIVATE_LABELS_ENV = "TEST_LABELS"
-
-# Local path to private labels (for local testing on Windows)
-LOCAL_PRIVATE_LABEL_FILE = r"C:\Users\Idrees Bhat\Desktop\GNNs\Basira\Islem\private_data\test_labels.csv"
 
 # Path to participant submissions folder
 SUBMISSIONS_FOLDER = "submissions"
@@ -30,13 +26,9 @@ if private_labels_csv:
     # GitHub Actions: read CSV from secret
     truth = pd.read_csv(io.StringIO(private_labels_csv))
     print("Loaded private labels from GitHub secret.")
-elif os.path.exists(LOCAL_PRIVATE_LABEL_FILE):
-    # Local testing: read CSV from Windows path
-    truth = pd.read_csv(LOCAL_PRIVATE_LABEL_FILE)
-    print(f"Loaded private labels from local file: {LOCAL_PRIVATE_LABEL_FILE}")
 else:
     raise FileNotFoundError(
-        f"Private labels not found. Tried env '{PRIVATE_LABELS_ENV}' and local file '{LOCAL_PRIVATE_LABEL_FILE}'."
+        f"Private labels not found. Tried env '{PRIVATE_LABELS_ENV}'."
     )
 
 truth.columns = truth.columns.str.strip()
