@@ -17,8 +17,11 @@ venv/
 data/test_labels.csv
 data/validation.csv
 
-# Submissions (optional: if you don't want old submissions in repo)
+# Ignore everything in submissions
 submissions/*
+
+# But allow CSV submissions
+!submissions/*.csv
 
 # OS and IDE
 .DS_Store
