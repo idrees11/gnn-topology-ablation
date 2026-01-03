@@ -1,51 +1,58 @@
-name: Auto Score & Update Leaderboard
+name: Score Submissions
 
 on:
   pull_request:
-    paths:
-      - 'submissions/*.csv'   # Trigger only when submission CSVs change
+    branches:
+      - main  # Only score PRs to main branch
+  push:
+    branches:
+      - main  # Optional: score submissions pushed directly
 
 jobs:
-  score_and_update:
+  scoring:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
+      # 1. Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
       # 2. Set up Python
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: 3.10
 
       # 3. Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r starter_code/requirements.txt
           pip install pandas scikit-learn
 
-      # 4. Run scoring (uses private labels from GitHub Secret)
-      - name: Run scoring
-        env:
-          TEST_LABELS: ${{ secrets.TEST_LABELS }}
+      # 4. Find new submission CSV
+      - name: Find submission
+        id: submission
         run: |
-          echo "DEBUG: Running scoring using private labels from secret"
+          mkdir -p submissions  # Ensure folder exists
+          SUBMISSION=$(ls submissions/*.csv | head -n 1 || echo "")
+          if [ -z "$SUBMISSION" ]; then
+            echo "No submission CSV found"
+            exit 1
+          fi
+          echo "Submission file: $SUBMISSION"
+          echo "submission=$SUBMISSION" >> $GITHUB_OUTPUT
+
+      # 5. Run scoring script
+      - name: Run scoring script
+        env:
+          TEST_LABELS: ${{ secrets.TEST_LABELS }}  # Pass the private labels
+        run: |
           python scoring_script.py
 
-      # 5. Update leaderboard
-      - name: Update leaderboard
-        run: |
-          USERNAME="${{ github.actor }}"
-          python update_leaderboard.py "$USERNAME"
-
-      # 6. Commit & push updated leaderboard
-      - name: Commit & push leaderboard
-        run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-          git add leaderboard/leaderboard.md
-          git commit -m "Update leaderboard via GitHub Actions [skip ci]" || echo "No changes to commit"
-          git push origin HEAD:${{ github.head_ref }}
+      # 6. Upload leaderboard artifact (optional)
+      - name: Upload leaderboard
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: leaderboard
+          path: leaderboard.csv
