@@ -2,61 +2,45 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches:
-      - main  # Score PRs to main branch
+    branches: [main]
   push:
-    branches:
-      - main  # Optional: score submissions pushed directly
-  workflow_dispatch:   # Optional: allow manual trigger
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   scoring:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # 2️⃣ Set up Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas scikit-learn
 
-      # 4️⃣ Ensure submissions folder exists
-      - name: Ensure submissions folder
+      - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      # 5️⃣ Write TEST_LABELS secret to a CSV file
-      - name: Write TEST_LABELS file from secret
+      - name: Write TEST_LABELS secret to file
         run: |
-          printf "%s" "${{ secrets.TEST_LABELS }}" > private_labels.csv
+          echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
 
-
-      - name: Debug TEST_LABELS file
-        run: |
-          ls -l
-          cat private_labels.csv
-
-      # 6️⃣ Run scoring script
       - name: Run scoring script
         env:
-          TEST_LABELS: private_labels.csv  # points to the CSV file we just created
+          TEST_LABELS: private_labels.csv
         run: |
-          # Run scoring for all CSV submissions in the submissions folder
           for file in submissions/*.csv; do
               echo "Scoring submission: $file"
               python scoring_script.py "$file"
           done
 
-      # 7️⃣ Upload leaderboard artifact
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
