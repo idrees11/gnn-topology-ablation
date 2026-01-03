@@ -3,7 +3,7 @@ name: Score Submissions
 on:
   pull_request:
     branches:
-      - main  # Only score PRs to main branch
+      - main  # Only score PRs to the main branch
   push:
     branches:
       - main  # Optional: score submissions pushed directly
@@ -45,7 +45,7 @@ jobs:
       # 5. Run scoring script
       - name: Run scoring script
         env:
-          TEST_LABELS: ${{ secrets.TEST_LABELS }}  # Pass the private labels
+          TEST_LABELS: ${{ secrets.TEST_LABELS }}  # Pass the private labels from GitHub secrets
         run: |
           python scoring_script.py
 
