@@ -1,4 +1,3 @@
-
 # scoring_script.py
 import os
 import pandas as pd
@@ -9,8 +8,11 @@ from sklearn.metrics import f1_score
 # CONFIG
 # ----------------------------
 
-# Environment variable containing private labels CSV
+# Environment variable containing private labels CSV (for GitHub Actions)
 PRIVATE_LABELS_ENV = "TEST_LABELS"
+
+# Local path to private labels (for local testing on Windows)
+LOCAL_PRIVATE_LABEL_FILE = r"C:\Users\Idrees Bhat\Desktop\GNNs\Basira\Islem\private_data\test_labels.csv"
 
 # Path to participant submissions folder
 SUBMISSIONS_FOLDER = "submissions"
@@ -19,18 +21,24 @@ SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
 
 # ----------------------------
-# Load private labels (from GitHub Secret)
+# Load private labels
 # ----------------------------
 
 private_labels_csv = os.getenv(PRIVATE_LABELS_ENV)
 
-if private_labels_csv is None:
-    raise RuntimeError(
-        "Private labels not found. "
-        "Make sure PRIVATE_TEST_LABELS is set as a GitHub Actions secret."
+if private_labels_csv:
+    # GitHub Actions: read CSV from secret
+    truth = pd.read_csv(io.StringIO(private_labels_csv))
+    print("Loaded private labels from GitHub secret.")
+elif os.path.exists(LOCAL_PRIVATE_LABEL_FILE):
+    # Local testing: read CSV from Windows path
+    truth = pd.read_csv(LOCAL_PRIVATE_LABEL_FILE)
+    print(f"Loaded private labels from local file: {LOCAL_PRIVATE_LABEL_FILE}")
+else:
+    raise FileNotFoundError(
+        f"Private labels not found. Tried env '{PRIVATE_LABELS_ENV}' and local file '{LOCAL_PRIVATE_LABEL_FILE}'."
     )
 
-truth = pd.read_csv(io.StringIO(private_labels_csv))
 truth.columns = truth.columns.str.strip()
 
 # Detect label column
@@ -39,7 +47,7 @@ for col in ['label', 'target']:
         truth_col = col
         break
 else:
-    raise ValueError("No 'label' or 'target' column found in private labels")
+    raise ValueError("No 'label' or 'target' column found in private labels.")
 
 # ----------------------------
 # Evaluate each submission
@@ -47,13 +55,16 @@ else:
 
 scores = []
 
+if not os.path.exists(SUBMISSIONS_FOLDER):
+    raise FileNotFoundError(f"Submissions folder not found: {SUBMISSIONS_FOLDER}")
+
 for fname in os.listdir(SUBMISSIONS_FOLDER):
     if fname.endswith(".csv"):
         submission_path = os.path.join(SUBMISSIONS_FOLDER, fname)
         submission = pd.read_csv(submission_path)
         submission.columns = submission.columns.str.strip()
 
-        # Detect label column
+        # Detect label column in submission
         for col in ['label', 'target']:
             if col in submission.columns:
                 submission_col = col
@@ -62,12 +73,12 @@ for fname in os.listdir(SUBMISSIONS_FOLDER):
             print(f"Skipping {fname}: No 'label' or 'target' column found")
             continue
 
-        # Sanity check
+        # Check length
         if len(submission) != len(truth):
             print(f"Skipping {fname}: Length mismatch with ground truth")
             continue
 
-        # Compute F1 score
+        # Compute F1 score (macro)
         score = f1_score(
             truth[truth_col],
             submission[submission_col],
