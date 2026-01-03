@@ -5,6 +5,9 @@ import sys
 
 print("Running scoring_script.py from:", sys.argv[0])
 
+# ----------------------------
+# CONFIG
+# ----------------------------
 PRIVATE_LABELS_ENV = "TEST_LABELS"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
@@ -33,7 +36,7 @@ if private_labels:
 if truth is None:
     print(
         f"WARNING: Private labels not found. Tried env '{PRIVATE_LABELS_ENV}'. "
-        "Scoring will be skipped (expected for participants)."
+        "Scoring will be skipped (expected for participant forks)."
     )
 
 # ----------------------------
