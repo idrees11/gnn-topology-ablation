@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - main  # Optional: score submissions pushed directly
+  workflow_dispatch:   # Optional: allow manual trigger
 
 jobs:
   scoring:
@@ -33,13 +34,23 @@ jobs:
       - name: Ensure submissions folder
         run: mkdir -p submissions
 
-      # 5️⃣ Run scoring script
+      # 5️⃣ Write TEST_LABELS secret to a CSV file
+      - name: Write TEST_LABELS file from secret
+        run: |
+          echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
+
+      # 6️⃣ Run scoring script
       - name: Run scoring script
         env:
-          TEST_LABELS: ${{ secrets.TEST_LABELS || '' }}  # Secret with private labels
-        run: python scoring_script.py
+          TEST_LABELS: private_labels.csv  # points to the CSV file we just created
+        run: |
+          # Run scoring for all CSV submissions in the submissions folder
+          for file in submissions/*.csv; do
+              echo "Scoring submission: $file"
+              python scoring_script.py "$file"
+          done
 
-      # 6️⃣ Upload leaderboard
+      # 7️⃣ Upload leaderboard artifact
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
