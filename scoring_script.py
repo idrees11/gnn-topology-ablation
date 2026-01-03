@@ -37,17 +37,21 @@ if truth is None:
     )
 
 # ----------------------------
-# Detect label column
+# Detect label column (PRIVATE LABELS)
 # ----------------------------
 truth_col = None
 if truth is not None:
-    truth.columns = truth.columns.str.strip()
+    # 🔧 FIX: normalize column names
+    truth.columns = truth.columns.str.strip().str.lower()
+
     for col in ["label", "target"]:
         if col in truth.columns:
             truth_col = col
             break
+
     if truth_col is None:
         print("No 'label' or 'target' column found in private labels. Skipping scoring.")
+        print("DEBUG private label columns:", truth.columns.tolist())
         truth = None
 
 # ----------------------------
@@ -62,7 +66,9 @@ else:
         if fname.endswith(".csv"):
             submission_path = os.path.join(SUBMISSIONS_FOLDER, fname)
             submission = pd.read_csv(submission_path)
-            submission.columns = submission.columns.str.strip()
+
+            # 🔧 FIX: normalize submission column names
+            submission.columns = submission.columns.str.strip().str.lower()
 
             # Detect label column
             submission_col = None
@@ -73,6 +79,7 @@ else:
 
             if submission_col is None:
                 print(f"Skipping {fname}: No 'label' or 'target' column found")
+                print("DEBUG submission columns:", submission.columns.tolist())
                 continue
 
             if truth is not None:
@@ -82,7 +89,11 @@ else:
                     continue
 
                 # Compute F1 score
-                score = f1_score(truth[truth_col], submission[submission_col], average="macro")
+                score = f1_score(
+                    truth[truth_col],
+                    submission[submission_col],
+                    average="macro"
+                )
                 print(f"{fname} -> F1 Score: {score:.4f}")
                 scores.append({"submission": fname, "f1_score": score})
             else:
