@@ -9,6 +9,7 @@ from sklearn.metrics import f1_score
 PRIVATE_LABELS_ENV = "TEST_LABELS"   # env var holds FILE PATH
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
+TEMPLATE_PREFIXES = ["sample", "example"]  # files to skip
 
 print("Running scoring_script.py from:", sys.argv[0])
 
@@ -58,8 +59,18 @@ else:
         if not fname.endswith(".csv"):
             continue
 
+        # Skip sample/template files
+        if any(fname.lower().startswith(p) for p in TEMPLATE_PREFIXES):
+            print(f"Skipping template/sample file: {fname}")
+            continue
+
         submission_path = os.path.join(SUBMISSIONS_FOLDER, fname)
-        submission = pd.read_csv(submission_path)
+        try:
+            submission = pd.read_csv(submission_path)
+        except pd.errors.EmptyDataError:
+            print(f"Skipping {fname}: file is empty or invalid")
+            continue
+
         submission.columns = submission.columns.str.strip().str.lower()
 
         print(f"\nProcessing submission: {fname}")
@@ -80,7 +91,6 @@ else:
         # Organiser scoring (truth available)
         # ----------------------------
         if truth is not None:
-
             # 🔑 Detect ID column (graph_index preferred, fallback to id)
             if "graph_index" in truth.columns and "graph_index" in submission.columns:
                 id_col = "graph_index"
