@@ -36,14 +36,20 @@ jobs:
       - name: Write TEST_LABELS secret to file (main branch only)
         if: github.event_name != 'pull_request'
         run: |
-          echo "${{ secrets.TEST_LABELS_B64 }}" | base64 --decode > private_labels.csv
+          if [ -n "${{ secrets.TEST_LABELS_B64 }}" ]; then
+            printf "%s" "${{ secrets.TEST_LABELS_B64 }}" | base64 --decode > private_labels.csv
+            echo "Private labels written to private_labels.csv"
+          else
+            echo "TEST_LABELS_B64 secret is empty or missing, skipping."
+          fi
 
       # ----------------------------
       - name: Create dummy submission if none exists
         run: |
-          if [ -z "$(ls -A submissions)" ]; then
+          if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
+            echo "Created dummy submission."
           fi
 
       # ----------------------------
