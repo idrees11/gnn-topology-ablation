@@ -1,6 +1,6 @@
 🧠 GNN Challenge: Graph Classification with Topological Features
 Overview
-
+    
 Welcome to the Graph Neural Networks (GNN) Challenge!
 This competition focuses on graph classification using message-passing neural networks, with an emphasis on topological (structural) feature augmentation. Participants are challenged to design models that effectively combine node features, graph structure, and topological descriptors to improve classification performance.
     
