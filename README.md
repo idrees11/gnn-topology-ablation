@@ -7,7 +7,7 @@ This competition focuses on graph classification using message-passing neural ne
 The challenge is small, fast, yet non-trivial, and can be fully solved using methods covered in DGL Lectures 1.1–4.6 (https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T).
 
 🎯 Problem Statement
-
+       
 Given a graph 
 𝐺
 =
