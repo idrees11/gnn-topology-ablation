@@ -33,8 +33,18 @@ jobs:
         run: mkdir -p submissions
 
       # ----------------------------
-      - name: Write TEST_LABELS secret to file
-        run: echo "${{ secrets.TEST_LABELS_B64 }}" > private_labels.csv
+      - name: Write TEST_LABELS secret to file (main branch only)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "${{ secrets.TEST_LABELS_B64 }}" | base64 --decode > private_labels.csv
+
+      # ----------------------------
+      - name: Create dummy submission if none exists
+        run: |
+          if [ -z "$(ls -A submissions)" ]; then
+            echo "graph_index,label" > submissions/dummy.csv
+            echo "0,0" >> submissions/dummy.csv
+          fi
 
       # ----------------------------
       - name: Run scoring script
