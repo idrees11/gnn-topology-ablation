@@ -19,9 +19,13 @@ truth = None
 truth_path = os.getenv(PRIVATE_LABELS_ENV)
 
 if truth_path and os.path.exists(truth_path) and os.path.getsize(truth_path) > 0:
-    truth = pd.read_csv(truth_path)
-    truth.columns = truth.columns.str.strip().str.lower()
-    print(f"Loaded private labels from file: {truth_path}")
+    try:
+        truth = pd.read_csv(truth_path)
+        truth.columns = truth.columns.str.strip().str.lower()
+        print(f"Loaded private labels from file: {truth_path}")
+    except pd.errors.EmptyDataError:
+        print(f"ERROR: Private labels file {truth_path} is empty or invalid.")
+        truth = None
 else:
     print(
         "INFO: Private labels unavailable.\n"
@@ -77,7 +81,7 @@ else:
         # ----------------------------
         if truth is not None:
 
-            # 🔑 Detect ID column (graph_index preferred)
+            # 🔑 Detect ID column (graph_index preferred, fallback to id)
             if "graph_index" in truth.columns and "graph_index" in submission.columns:
                 id_col = "graph_index"
             elif "id" in truth.columns and "id" in submission.columns:
