@@ -61,7 +61,9 @@ else:
         print(f"\nProcessing submission: {fname}")
         print(f"Submission rows: {len(submission)}")
 
-        # Detect submission column
+        # ----------------------------
+        # Detect prediction column
+        # ----------------------------
         if "label" in submission.columns:
             submission_col = "label"
         elif "target" in submission.columns:
@@ -74,13 +76,19 @@ else:
         # Organiser scoring (truth available)
         # ----------------------------
         if truth is not None:
-            if "id" not in truth.columns or "id" not in submission.columns:
-                print(f"Skipping {fname}: missing 'id' column")
+
+            # 🔑 Detect ID column (graph_index preferred)
+            if "graph_index" in truth.columns and "graph_index" in submission.columns:
+                id_col = "graph_index"
+            elif "id" in truth.columns and "id" in submission.columns:
+                id_col = "id"
+            else:
+                print(f"Skipping {fname}: missing 'graph_index' or 'id' column")
                 continue
 
             merged = truth.merge(
                 submission,
-                on="id",
+                on=id_col,
                 suffixes=("_true", "_pred"),
                 how="inner"
             )
