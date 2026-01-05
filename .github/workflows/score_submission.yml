@@ -2,10 +2,10 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches: [main]          # CI only, NO scoring
+    branches: [main]
   push:
-    branches: [main]          # Organizer scoring
-  workflow_dispatch:          # Manual organizer scoring
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   scoring:
@@ -28,22 +28,11 @@ jobs:
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      # 🚫 Explicitly skip scoring for fork PRs
-      - name: Skip scoring for pull requests
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "Scoring skipped: secrets are unavailable for forked PRs."
-          exit 0
-
-      # ✅ Organizer-only: write secret safely
       - name: Write TEST_LABELS secret to file
-        if: github.event_name != 'pull_request'
         run: |
-          printf "%s" "${{ secrets.TEST_LABELS }}" > private_labels.csv
+          echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
 
-      # ✅ Organizer-only scoring
       - name: Run scoring script
-        if: github.event_name != 'pull_request'
         env:
           TEST_LABELS: private_labels.csv
         run: |
@@ -53,7 +42,7 @@ jobs:
           done
 
       - name: Upload leaderboard
-        if: github.event_name != 'pull_request'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
