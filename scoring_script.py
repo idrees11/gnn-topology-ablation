@@ -3,14 +3,17 @@ import sys
 import pandas as pd
 from sklearn.metrics import f1_score
 
-PRIVATE_LABELS_ENV = "TEST_LABELS"
+# ----------------------------
+# Constants
+# ----------------------------
+PRIVATE_LABELS_ENV = "TEST_LABELS"   # env var holds FILE PATH
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
 
 print("Running scoring_script.py from:", sys.argv[0])
 
 # ----------------------------
-# Load private labels (FILE PATH ONLY)
+# Load private labels (ORGANISER ONLY)
 # ----------------------------
 truth = None
 truth_path = os.getenv(PRIVATE_LABELS_ENV)
@@ -21,20 +24,22 @@ if truth_path and os.path.exists(truth_path):
     print(f"Loaded private labels from file: {truth_path}")
 else:
     print(
-        "WARNING: Private labels not found. "
-        "Scoring will be skipped (expected for forks)."
+        "INFO: Private labels unavailable.\n"
+        "Scoring skipped (this is EXPECTED for PRs and forks).\n"
+        "Scoring runs only on push to main or manual workflow trigger."
     )
 
-# Detect truth column
+# ----------------------------
+# Detect truth column (label preferred)
+# ----------------------------
 truth_col = None
 if truth is not None:
-    for col in ("label", "target"):
-        if col in truth.columns:
-            truth_col = col
-            break
-
-    if truth_col is None:
-        print("ERROR: No 'label' or 'target' column in private labels.")
+    if "label" in truth.columns:
+        truth_col = "label"
+    elif "target" in truth.columns:
+        truth_col = "target"
+    else:
+        print("ERROR: Private labels must contain a 'label' column.")
         print("Found columns:", truth.columns.tolist())
         truth = None
 
@@ -44,7 +49,7 @@ if truth is not None:
 scores = []
 
 if not os.path.exists(SUBMISSIONS_FOLDER):
-    print(f"No submissions folder: {SUBMISSIONS_FOLDER}")
+    print(f"No submissions folder found: {SUBMISSIONS_FOLDER}")
 else:
     for fname in os.listdir(SUBMISSIONS_FOLDER):
         if not fname.endswith(".csv"):
@@ -55,16 +60,17 @@ else:
         submission.columns = submission.columns.str.strip().str.lower()
 
         # Detect submission column
-        submission_col = None
-        for col in ("label", "target"):
-            if col in submission.columns:
-                submission_col = col
-                break
-
-        if submission_col is None:
-            print(f"Skipping {fname}: no label column")
+        if "label" in submission.columns:
+            submission_col = "label"
+        elif "target" in submission.columns:
+            submission_col = "target"
+        else:
+            print(f"Skipping {fname}: missing 'label' column")
             continue
 
+        # ----------------------------
+        # Scoring (organiser only)
+        # ----------------------------
         if truth is not None:
             if len(submission) != len(truth):
                 print(f"Skipping {fname}: length mismatch")
@@ -76,21 +82,30 @@ else:
                 average="macro"
             )
 
-            print(f"{fname} -> F1: {score:.4f}")
-            scores.append({"submission": fname, "f1_score": score})
+            print(f"{fname} -> F1 (macro): {score:.4f}")
+            scores.append({
+                "submission": fname,
+                "f1_score": round(score, 6)
+            })
         else:
-            print(f"Found submission (skipping scoring): {fname}")
-            scores.append({"submission": fname, "f1_score": None})
+            print(f"Found submission (scoring skipped): {fname}")
+            scores.append({
+                "submission": fname,
+                "f1_score": None
+            })
 
 # ----------------------------
 # Save leaderboard
 # ----------------------------
 if scores:
     leaderboard = pd.DataFrame(scores)
+
     if truth is not None:
         leaderboard = leaderboard.sort_values(
-            by="f1_score", ascending=False
+            by="f1_score",
+            ascending=False
         )
+
     leaderboard.to_csv(LEADERBOARD_FILE, index=False)
     print(f"Leaderboard saved to {LEADERBOARD_FILE}")
 else:
