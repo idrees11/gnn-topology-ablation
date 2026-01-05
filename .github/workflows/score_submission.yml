@@ -12,27 +12,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
+      # ----------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas scikit-learn
 
+      # ----------------------------
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      - name: Write TEST_LABELS secret to file (if exists)
-        if: ${{ secrets.TEST_LABELS }}
-        run: |
-          echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
+      # ----------------------------
+      - name: Write TEST_LABELS secret to file
+        run: echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
 
+      # ----------------------------
       - name: Run scoring script
         env:
           TEST_LABELS: private_labels.csv
@@ -40,6 +44,7 @@ jobs:
           echo "Running scoring script..."
           python scoring_script.py
 
+      # ----------------------------
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
