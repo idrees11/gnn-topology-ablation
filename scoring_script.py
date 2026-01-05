@@ -60,6 +60,7 @@ else:
         submission.columns = submission.columns.str.strip().str.lower()
 
         # Detect submission column
+        print(f"Truth rows: {len(truth)} | Submission rows: {len(submission)}")
         if "label" in submission.columns:
             submission_col = "label"
         elif "target" in submission.columns:
