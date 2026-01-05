@@ -9,12 +9,12 @@ from sklearn.metrics import f1_score
 PRIVATE_LABELS_ENV = "TEST_LABELS"   # env var holds FILE PATH
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
-TEMPLATE_PREFIXES = ["sample", "example"]  # files to skip
+DUMMY_FILE = "dummy.csv"             # file to ignore
 
 print("Running scoring_script.py from:", sys.argv[0])
 
 # ----------------------------
-# Load private labels (ORGANISER ONLY)
+# Load private labels (organiser only)
 # ----------------------------
 truth = None
 truth_path = os.getenv(PRIVATE_LABELS_ENV)
@@ -30,7 +30,7 @@ if truth_path and os.path.exists(truth_path) and os.path.getsize(truth_path) > 0
 else:
     print(
         "INFO: Private labels unavailable.\n"
-        "Scoring skipped (this is EXPECTED for PRs and forks).\n"
+        "Scoring skipped (this is EXPECTED for PRs/forks).\n"
         "Scoring runs only on push to main or manual workflow trigger."
     )
 
@@ -58,10 +58,8 @@ else:
     for fname in os.listdir(SUBMISSIONS_FOLDER):
         if not fname.endswith(".csv"):
             continue
-
-        # Skip sample/template files
-        if any(fname.lower().startswith(p) for p in TEMPLATE_PREFIXES):
-            print(f"Skipping template/sample file: {fname}")
+        if fname == DUMMY_FILE:
+            print(f"Skipping dummy file: {fname}")
             continue
 
         submission_path = os.path.join(SUBMISSIONS_FOLDER, fname)
@@ -91,7 +89,8 @@ else:
         # Organiser scoring (truth available)
         # ----------------------------
         if truth is not None:
-            # 🔑 Detect ID column (graph_index preferred, fallback to id)
+
+            # Detect ID column (graph_index preferred, fallback to id)
             if "graph_index" in truth.columns and "graph_index" in submission.columns:
                 id_col = "graph_index"
             elif "id" in truth.columns and "id" in submission.columns:
@@ -141,6 +140,7 @@ else:
 # ----------------------------
 leaderboard = pd.DataFrame(scores)
 
+# Sort only if truth is available
 if not leaderboard.empty and truth is not None:
     leaderboard = leaderboard.sort_values(by="f1_score", ascending=False)
 
