@@ -28,7 +28,8 @@ jobs:
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      - name: Write TEST_LABELS secret to file
+      - name: Write TEST_LABELS secret to file (if exists)
+        if: ${{ secrets.TEST_LABELS }}
         run: |
           echo "${{ secrets.TEST_LABELS }}" > private_labels.csv
 
@@ -36,10 +37,8 @@ jobs:
         env:
           TEST_LABELS: private_labels.csv
         run: |
-          for file in submissions/*.csv; do
-              echo "Scoring submission: $file"
-              python scoring_script.py "$file"
-          done
+          echo "Running scoring script..."
+          python scoring_script.py
 
       - name: Upload leaderboard
         if: always()
