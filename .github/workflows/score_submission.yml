@@ -2,13 +2,14 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches: [main]       # Trigger workflow on PRs targeting main
+    branches: [main]        # PRs to main (NO PUSH BACK)
   push:
-    branches: [main]       # Trigger workflow on push to main
-  workflow_dispatch:       # Allows manual trigger from GitHub UI
+    branches: [main]        # Push to main (CAN PUSH BACK)
+  workflow_dispatch:        # Manual trigger
 
+# REQUIRED for git push from GitHub Actions
 permissions:
-  contents: write           # Needed for pushing leaderboard changes if necessary
+  contents: write
 
 jobs:
   scoring:
@@ -20,9 +21,11 @@ jobs:
       # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # ----------------------------
-      # 2. Set up Python environment
+      # 2. Set up Python
       # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -44,42 +47,62 @@ jobs:
         run: mkdir -p submissions
 
       # ----------------------------
-      # 5. Create dummy submission if empty (PR-safe)
+      # 5. Create dummy submission (PR-safe)
       # ----------------------------
       - name: Create dummy submission if empty
         run: |
           if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
-            echo "Created dummy submission."
+            echo "Dummy submission created."
           fi
 
       # ----------------------------
-      # 6. Run scoring script (compute F1 scores)
+      # 6. Run scoring script
       # ----------------------------
       - name: Run scoring script
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Running scoring script..."
-          python scoring_script.py || echo "Scoring skipped or failed"
+          python scoring_script.py || echo "Scoring skipped (expected for PRs)"
 
       # ----------------------------
-      # 7. Run leaderboard system to update leaderboard.md
+      # 7. Update leaderboard
       # ----------------------------
       - name: Update leaderboard
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Updating leaderboard..."
-          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped or failed"
+          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped"
 
       # ----------------------------
       # 8. Upload leaderboard artifact
       # ----------------------------
-      - name: Upload leaderboard
+      - name: Upload leaderboard artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard/leaderboard.md  # Upload the markdown leaderboard
+          path: leaderboard/leaderboard.md
+
+      # ----------------------------
+      # 9. Commit leaderboard (ONLY on push to main)
+      # ----------------------------
+      - name: Commit leaderboard
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "action@github.com"
+
+          git add leaderboard/leaderboard.md || true
+          git commit -m "Update leaderboard [skip ci]" || echo "No changes to commit"
+
+      # ----------------------------
+      # 10. Push changes (ONLY on push to main)
+      # ----------------------------
+      - name: Push leaderboard
+        if: github.event_name == 'push'
+        run: |
+          git push
