@@ -2,6 +2,8 @@ import os
 import sys
 import pandas as pd
 from sklearn.metrics import f1_score
+import base64
+import io
 
 # ----------------------------
 # Constants
