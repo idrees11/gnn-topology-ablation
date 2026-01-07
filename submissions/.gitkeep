@@ -1,1 +1,4 @@
-
+touch submissions/.gitkeep
+git add submissions/.gitkeep
+git commit -m "Ensure submissions folder exists with .gitkeep"
+git push
