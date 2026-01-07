@@ -3,7 +3,7 @@ name: Score Submissions
 on:
   pull_request:
     branches: [main]
-  push: 
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -44,7 +44,7 @@ jobs:
         run: mkdir -p submissions
 
       # ----------------------------
-      # Create dummy submission if folder is empty (PR-safe)
+      # Create dummy submission if empty (PR-safe)
       # ----------------------------
       - name: Create dummy submission if empty
         run: |
@@ -55,12 +55,24 @@ jobs:
           fi
 
       # ----------------------------
-      # Run leaderboard system
+      # Run scoring script
       # ----------------------------
-      - name: Run leaderboard system
+      - name: Run scoring script
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-        run: python leaderboard/leaderboard_system.py
+        run: |
+          echo "Running scoring script..."
+          python scoring_script.py
+
+      # ----------------------------
+      # Run leaderboard system to update leaderboard.md
+      # ----------------------------
+      - name: Update leaderboard
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
+        run: |
+          echo "Updating leaderboard..."
+          python leaderboard/leaderboard_system.py
 
       # ----------------------------
       # Upload leaderboard artifact
