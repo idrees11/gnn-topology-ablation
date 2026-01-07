@@ -54,21 +54,21 @@ jobs:
           fi
 
       # ----------------------------
-      # Run scoring script (SINGLE SOURCE OF TRUTH)
+      # Run the leaderboard system (SINGLE SOURCE OF TRUTH)
       # ----------------------------
-      - name: Run scoring script
+      - name: Run leaderboard system
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          echo "Running scoring script..."
-          python scoring_script.py
+          echo "Running leaderboard system..."
+          python leaderboard/leaderboard_system.py
 
       # ----------------------------
-      # Upload leaderboard artifact
+      # Upload the actual leaderboard file
       # ----------------------------
-      - name: Upload leaderboard
+      - name: Upload leaderboard artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard.csv
+          path: leaderboard/leaderboard.md
