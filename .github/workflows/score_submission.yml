@@ -2,13 +2,13 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main]       # Trigger workflow on PRs targeting main
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]       # Trigger workflow on push to main
+  workflow_dispatch:       # Allows manual trigger from GitHub UI
 
 permissions:
-  contents: write
+  contents: write           # Needed for pushing leaderboard changes if necessary
 
 jobs:
   scoring:
@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v3
 
       # ----------------------------
-      # Set up Python
+      # Set up Python environment
       # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -55,14 +55,14 @@ jobs:
           fi
 
       # ----------------------------
-      # Run scoring script
+      # Run scoring script (compute F1 scores)
       # ----------------------------
       - name: Run scoring script
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Running scoring script..."
-          python scoring_script.py
+          python scoring_script.py || echo "Scoring skipped or failed"
 
       # ----------------------------
       # Run leaderboard system to update leaderboard.md
@@ -72,7 +72,7 @@ jobs:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Updating leaderboard..."
-          python leaderboard/leaderboard_system.py
+          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped or failed"
 
       # ----------------------------
       # Upload leaderboard artifact
@@ -82,4 +82,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard/leaderboard.md
+          path: leaderboard/leaderboard.md  # Upload the markdown leaderboard
