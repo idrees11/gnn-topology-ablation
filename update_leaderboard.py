@@ -1,7 +1,7 @@
 """
 update_leaderboard.py
-Safely updates leaderboard/leaderboard.md
-Uses TEST_LABELS_B64 secret for scoring
+Safely updates leaderboard/leaderboard.md using submissions
+Handles PRs/forks where private labels may not be available.
 """
 
 import os
@@ -11,10 +11,19 @@ import pandas as pd
 from datetime import datetime
 from sklearn.metrics import f1_score
 
+# ----------------------------
+# Constants
+# ----------------------------
 SUBMISSIONS_DIR = "submissions"
 LEADERBOARD_DIR = "leaderboard"
 LEADERBOARD_FILE = os.path.join(LEADERBOARD_DIR, "leaderboard.md")
 
+# ----------------------------
+# Ensure submissions folder exists
+# ----------------------------
+if not os.path.exists(SUBMISSIONS_DIR):
+    print(f"INFO: '{SUBMISSIONS_DIR}' folder not found. Creating it.")
+    os.makedirs(SUBMISSIONS_DIR)
 
 # ----------------------------
 # Load private labels from TEST_LABELS_B64
@@ -28,10 +37,13 @@ def load_private_labels():
         decoded_csv = base64.b64decode(labels_b64).decode("utf-8")
         truth = pd.read_csv(io.StringIO(decoded_csv))
         truth.columns = truth.columns.str.strip()
+        # Ensure 'target' column exists
+        if "target" not in truth.columns:
+            raise ValueError("Private labels CSV must contain 'target' column")
         return truth
     except Exception as e:
-        raise RuntimeError(f"Failed to decode TEST_LABELS_B64: {e}")
-
+        print(f"ERROR: Failed to decode TEST_LABELS_B64: {e}")
+        return None
 
 # ----------------------------
 # Score a single submission
@@ -39,18 +51,17 @@ def load_private_labels():
 def score_submission(sub_path, truth):
     df = pd.read_csv(sub_path)
     df.columns = df.columns.str.strip()
-
     pred_col = "label" if "label" in df.columns else "target"
+
     if pred_col not in df.columns:
         raise ValueError(f"Submission {sub_path} missing prediction column")
 
-    # Align lengths
+    # Align lengths (in case submission is longer than truth)
     min_len = min(len(df), len(truth))
     y_true = truth["target"].iloc[:min_len]
     y_pred = df[pred_col].iloc[:min_len]
 
     return f1_score(y_true, y_pred, average="macro")
-
 
 # ----------------------------
 # Write leaderboard markdown
@@ -64,7 +75,9 @@ def write_leaderboard(entries):
 
         if not entries:
             f.write("| - | - | - | - | - |\n")
+            print("Leaderboard is empty (no submissions).")
         else:
+            # Sort entries by score descending, errors last
             entries_sorted = sorted(
                 entries,
                 key=lambda x: float(x["f1_score"]) if isinstance(x["f1_score"], (int, float)) else -1,
@@ -76,12 +89,10 @@ def write_leaderboard(entries):
                     f"| {i} | {e['participant']} | {e['f1_score']} | "
                     f"{e['submission']} | {e['timestamp']} |\n"
                 )
-
     print(f"Leaderboard updated → {LEADERBOARD_FILE}")
 
-
 # ----------------------------
-# Main leaderboard update
+# Main function
 # ----------------------------
 def update_leaderboard():
     leaderboard = []
@@ -89,12 +100,7 @@ def update_leaderboard():
     # Load truth labels (None if PR/fork)
     truth = load_private_labels()
 
-    # Ensure submissions folder exists
-    if not os.path.exists(SUBMISSIONS_DIR):
-        print(f"INFO: '{SUBMISSIONS_DIR}' folder not found. Writing empty leaderboard.")
-        write_leaderboard([])
-        return
-
+    # Iterate submissions
     for file in os.listdir(SUBMISSIONS_DIR):
         if not file.endswith(".csv"):
             continue
@@ -118,5 +124,8 @@ def update_leaderboard():
     write_leaderboard(leaderboard)
 
 
+# ----------------------------
+# Entry point
+# ----------------------------
 if __name__ == "__main__":
     update_leaderboard()
