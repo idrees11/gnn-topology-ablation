@@ -7,21 +7,22 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   scoring:
     runs-on: ubuntu-latest
 
     steps:
       # ----------------------------
-      # Checkout repository (latest committed files)
+      # Checkout repository
       # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0   # ensures full commit history
 
       # ----------------------------
-      # Set up Python environment
+      # Set up Python
       # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,56 +38,30 @@ jobs:
           pip install pandas scikit-learn
 
       # ----------------------------
-      # Ensure submissions folder exists (PRs/forks safe)
+      # Ensure submissions folder exists
       # ----------------------------
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
       # ----------------------------
-      # Decode private labels (only on main branch / organiser)
+      # Create dummy submission (PR-safe)
       # ----------------------------
-      - name: Decode private labels
-        if: github.event_name != 'pull_request'
-        run: |
-          if [ -n "${TEST_LABELS_B64:-}" ]; then
-            printf "%s" "$TEST_LABELS_B64" | base64 --decode > private_labels.csv
-            echo "Private labels decoded successfully"
-          else
-            echo "TEST_LABELS_B64 not found – skipping decoding"
-          fi
-        env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-
-      # ----------------------------
-      # Create dummy submission if folder empty
-      # ----------------------------
-      - name: Create dummy submission if none exists
+      - name: Create dummy submission if empty
         run: |
           if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
-            echo "Created dummy submission."
           fi
 
       # ----------------------------
-      # Run scoring script (optional: legacy)
+      # Run scoring script (SINGLE SOURCE OF TRUTH)
       # ----------------------------
       - name: Run scoring script
         env:
-          TEST_LABELS: private_labels.csv
-        run: |
-          echo "Running scoring script..."
-          python scoring_script.py || echo "Scoring script skipped or failed"
-
-      # ----------------------------
-      # Update leaderboard using robust script
-      # ----------------------------
-      - name: Update leaderboard
-        env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          echo "Updating leaderboard..."
-          python update_leaderboard.py
+          echo "Running scoring script..."
+          python scoring_script.py
 
       # ----------------------------
       # Upload leaderboard artifact
@@ -96,4 +71,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard/leaderboard.md
+          path: leaderboard.csv
