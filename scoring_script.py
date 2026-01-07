@@ -15,25 +15,26 @@ LEADERBOARD_FILE = "leaderboard.csv"
 print("Running scoring_script.py from:", sys.argv[0])
 
 # ----------------------------
-# Load private labels
+# Load private labels (BASE64)
 # ----------------------------
 truth = None
-truth_path = os.getenv(PRIVATE_LABELS_ENV)
+labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
 
-if truth_path and os.path.exists(truth_path) and os.path.getsize(truth_path) > 0:
-    try:
-        truth = pd.read_csv(truth_path)
-        truth.columns = truth.columns.str.strip().str.lower()
-        print(f"Loaded private labels from file: {truth_path}")
-    except pd.errors.EmptyDataError:
-        print(f"ERROR: Private labels file {truth_path} is empty.")
-        truth = None
-else:
+if not labels_b64:
     print(
         "INFO: Private labels unavailable.\n"
         "Scoring skipped (EXPECTED for PRs/forks).\n"
         "Scoring runs only on push to main or manual workflow trigger."
     )
+else:
+    try:
+        decoded = base64.b64decode(labels_b64)
+        truth = pd.read_csv(io.BytesIO(decoded))
+        truth.columns = truth.columns.str.strip().str.lower()
+        print("Loaded private labels from TEST_LABELS_B64")
+    except Exception as e:
+        print(f"ERROR: Failed to decode TEST_LABELS_B64: {e}")
+        truth = None
 
 # ----------------------------
 # Detect truth column
@@ -89,7 +90,7 @@ else:
                 print(f"Skipping {fname}: missing ID column")
                 continue
 
-            # 🔑 FORCE SAME DTYPE ON BOTH DATAFRAMES
+            # Force numeric ID dtype
             truth[id_col] = pd.to_numeric(truth[id_col], errors="coerce")
             submission[id_col] = pd.to_numeric(submission[id_col], errors="coerce")
 
@@ -97,15 +98,14 @@ else:
             truth_clean = truth.dropna(subset=[id_col]).copy()
             submission_clean = submission.dropna(subset=[id_col]).copy()
 
-            # Convert to int (NOW SAFE)
+            # Convert to int (safe after dropna)
             truth_clean[id_col] = truth_clean[id_col].astype(int)
             submission_clean[id_col] = submission_clean[id_col].astype(int)
 
-            # DEBUG (safe to keep)
             print("ID dtype (truth):", truth_clean[id_col].dtype)
             print("ID dtype (submission):", submission_clean[id_col].dtype)
 
-            # ✅ SAFE MERGE (NO TYPE MISMATCH POSSIBLE)
+            # Merge truth and submission
             merged = truth_clean.merge(
                 submission_clean,
                 on=id_col,
@@ -119,6 +119,7 @@ else:
                 print(f"Skipping {fname}: no matching IDs")
                 continue
 
+            # Compute F1 score
             score = f1_score(
                 merged[f"{truth_col}_true"],
                 merged[f"{submission_col}_pred"],
@@ -137,7 +138,10 @@ else:
         # ----------------------------
         else:
             print(f"Found submission (scoring skipped): {fname}")
-            scores.append({"submission": fname, "f1_score": None})
+            scores.append({
+                "submission": fname,
+                "f1_score": None
+            })
 
 # ----------------------------
 # Save leaderboard
