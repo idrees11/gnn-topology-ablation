@@ -8,7 +8,7 @@ on:
   workflow_dispatch:       # Allows manual trigger from GitHub UI
 
 permissions:
-  contents: write           # Needed for pushing leaderboard changes if necessary
+  contents: write           # Needed only if you plan to push leaderboard changes from workflow
 
 jobs:
   scoring:
@@ -52,7 +52,6 @@ jobs:
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
             echo "Created dummy submission."
-          fi
 
       # ----------------------------
       # Run scoring script (compute F1 scores)
@@ -62,7 +61,12 @@ jobs:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Running scoring script..."
-          python scoring_script.py || echo "Scoring skipped or failed"
+          # Only run scoring if secret is available
+          if [ -n "$TEST_LABELS_B64" ]; then
+            python scoring_script.py
+          else
+            echo "Private labels secret not available. Scoring skipped (PRs/forks)."
+          fi
 
       # ----------------------------
       # Run leaderboard system to update leaderboard.md
@@ -72,7 +76,7 @@ jobs:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Updating leaderboard..."
-          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped or failed"
+          python leaderboard/leaderboard_system.py
 
       # ----------------------------
       # Upload leaderboard artifact
@@ -82,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard/leaderboard.md  # Upload the markdown leaderboard
+          path: leaderboard/leaderboard.md
