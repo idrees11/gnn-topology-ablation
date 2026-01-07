@@ -12,24 +12,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ----------------------------
+      # Checkout repository (latest committed files)
+      # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0   # ensures full commit history
 
+      # ----------------------------
+      # Set up Python environment
+      # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
+      # ----------------------------
+      # Install dependencies
+      # ----------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pandas scikit-learn
 
-      # Ensure submissions folder exists
+      # ----------------------------
+      # Ensure submissions folder exists (PRs/forks safe)
+      # ----------------------------
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      # Decode private labels (organiser only)
+      # ----------------------------
+      # Decode private labels (only on main branch / organiser)
+      # ----------------------------
       - name: Decode private labels
         if: github.event_name != 'pull_request'
         run: |
@@ -42,7 +57,9 @@ jobs:
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
 
+      # ----------------------------
       # Create dummy submission if folder empty
+      # ----------------------------
       - name: Create dummy submission if none exists
         run: |
           if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
@@ -51,21 +68,29 @@ jobs:
             echo "Created dummy submission."
           fi
 
-      # Run scoring script
+      # ----------------------------
+      # Run scoring script (optional: legacy)
+      # ----------------------------
       - name: Run scoring script
         env:
           TEST_LABELS: private_labels.csv
         run: |
           echo "Running scoring script..."
-          python scoring_script.py
+          python scoring_script.py || echo "Scoring script skipped or failed"
 
-      # Update leaderboard
+      # ----------------------------
+      # Update leaderboard using robust script
+      # ----------------------------
       - name: Update leaderboard
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Updating leaderboard..."
           python update_leaderboard.py
 
-      # Upload leaderboard
+      # ----------------------------
+      # Upload leaderboard artifact
+      # ----------------------------
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
