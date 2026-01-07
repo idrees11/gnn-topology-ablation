@@ -33,15 +33,19 @@ jobs:
         run: mkdir -p submissions
 
       # ----------------------------
-      - name: Write TEST_LABELS secret to file (main branch only)
+      # ONLY organiser runs this (push / manual run)
+      # NEVER runs for forked PRs
+      - name: Decode private labels (organiser only)
         if: github.event_name != 'pull_request'
         run: |
-          if [ -n "${{ secrets.TEST_LABELS_B64 }}" ]; then
-            printf "%s" "${{ secrets.TEST_LABELS_B64 }}" | base64 --decode > private_labels.csv
-            echo "Private labels written to private_labels.csv"
+          if [ -n "${TEST_LABELS_B64:-}" ]; then
+            printf "%s" "$TEST_LABELS_B64" | base64 --decode > private_labels.csv
+            echo "Private labels decoded successfully"
           else
-            echo "TEST_LABELS_B64 secret is empty or missing, skipping."
+            echo "TEST_LABELS_B64 not found – skipping decoding"
           fi
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
 
       # ----------------------------
       - name: Create dummy submission if none exists
