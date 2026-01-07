@@ -57,6 +57,34 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
+      # -------------------------------------------------
+      # ✅ PR FEEDBACK (ADDED — NO OTHER CHANGES)
+      # -------------------------------------------------
+      - name: Comment on PR (submission received)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+
+            const body = `
+            ✅ **Submission received successfully!**
+
+            🔹 Your submission has been detected.
+            🔹 Basic checks have been completed.
+            🔹 Final evaluation uses private labels and is run by the organisers.
+            🔹 The public leaderboard will be updated after evaluation.
+
+            Thank you for participating 🚀
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: body
+            });
+
   # -------------------------------------------------
   # 2. COMMIT JOB (ONLY push to main)
   # -------------------------------------------------
