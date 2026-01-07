@@ -74,7 +74,9 @@ else:
             print(f"Skipping {fname}: missing 'label' or 'target' column")
             continue
 
+        # ----------------------------
         # Organiser scoring
+        # ----------------------------
         if truth is not None:
             # Detect ID column
             if "graph_index" in truth.columns and "graph_index" in submission.columns:
@@ -85,14 +87,26 @@ else:
                 print(f"Skipping {fname}: missing 'graph_index' or 'id'")
                 continue
 
-            merged = truth.merge(
-                submission,
+            # 🔑 FIX: force same dtype for merge key
+            try:
+                truth[id_col] = pd.to_numeric(truth[id_col], errors="coerce").astype("Int64")
+                submission[id_col] = pd.to_numeric(submission[id_col], errors="coerce").astype("Int64")
+            except Exception as e:
+                print(f"Skipping {fname}: invalid ID column ({e})")
+                continue
+
+            # Drop rows with invalid IDs
+            truth_valid = truth.dropna(subset=[id_col])
+            submission_valid = submission.dropna(subset=[id_col])
+
+            merged = truth_valid.merge(
+                submission_valid,
                 on=id_col,
                 suffixes=("_true", "_pred"),
                 how="inner"
             )
 
-            print(f"Truth rows: {len(truth)} | Merged rows: {len(merged)}")
+            print(f"Truth rows: {len(truth_valid)} | Merged rows: {len(merged)}")
 
             if merged.empty:
                 print(f"Skipping {fname}: no matching IDs")
@@ -106,9 +120,14 @@ else:
 
             print(f"{fname} -> F1 (macro): {score:.4f}")
 
-            scores.append({"submission": fname, "f1_score": round(score, 6)})
+            scores.append({
+                "submission": fname,
+                "f1_score": round(score, 6)
+            })
 
-        # Participant/fork mode
+        # ----------------------------
+        # Participant / fork mode
+        # ----------------------------
         else:
             print(f"Found submission (scoring skipped): {fname}")
             scores.append({"submission": fname, "f1_score": None})
