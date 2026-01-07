@@ -24,7 +24,7 @@ if truth_path and os.path.exists(truth_path) and os.path.getsize(truth_path) > 0
         truth.columns = truth.columns.str.strip().str.lower()
         print(f"Loaded private labels from file: {truth_path}")
     except pd.errors.EmptyDataError:
-        print(f"ERROR: Private labels file {truth_path} is empty or invalid.")
+        print(f"ERROR: Private labels file {truth_path} is empty.")
         truth = None
 else:
     print(
@@ -54,7 +54,7 @@ scores = []
 if not os.path.exists(SUBMISSIONS_FOLDER):
     print(f"No submissions folder found: {SUBMISSIONS_FOLDER}")
 else:
-    for fname in os.listdir(SUBMISSIONS_FOLDER):
+    for fname in sorted(os.listdir(SUBMISSIONS_FOLDER)):
         if not fname.endswith(".csv"):
             continue
 
@@ -71,7 +71,7 @@ else:
         elif "target" in submission.columns:
             submission_col = "target"
         else:
-            print(f"Skipping {fname}: missing 'label' or 'target' column")
+            print(f"Skipping {fname}: missing 'label' or 'target'")
             continue
 
         # ----------------------------
@@ -84,29 +84,34 @@ else:
             elif "id" in truth.columns and "id" in submission.columns:
                 id_col = "id"
             else:
-                print(f"Skipping {fname}: missing 'graph_index' or 'id'")
+                print(f"Skipping {fname}: missing ID column")
                 continue
 
-            # 🔑 FIX: force same dtype for merge key
-            try:
-                truth[id_col] = pd.to_numeric(truth[id_col], errors="coerce").astype("Int64")
-                submission[id_col] = pd.to_numeric(submission[id_col], errors="coerce").astype("Int64")
-            except Exception as e:
-                print(f"Skipping {fname}: invalid ID column ({e})")
-                continue
+            # 🔑 FORCE SAME DTYPE ON BOTH DATAFRAMES
+            truth[id_col] = pd.to_numeric(truth[id_col], errors="coerce")
+            submission[id_col] = pd.to_numeric(submission[id_col], errors="coerce")
 
-            # Drop rows with invalid IDs
-            truth_valid = truth.dropna(subset=[id_col])
-            submission_valid = submission.dropna(subset=[id_col])
+            # Drop invalid IDs
+            truth_clean = truth.dropna(subset=[id_col]).copy()
+            submission_clean = submission.dropna(subset=[id_col]).copy()
 
-            merged = truth_valid.merge(
-                submission_valid,
+            # Convert to int (NOW SAFE)
+            truth_clean[id_col] = truth_clean[id_col].astype(int)
+            submission_clean[id_col] = submission_clean[id_col].astype(int)
+
+            # DEBUG (safe to keep)
+            print("ID dtype (truth):", truth_clean[id_col].dtype)
+            print("ID dtype (submission):", submission_clean[id_col].dtype)
+
+            # ✅ SAFE MERGE (NO TYPE MISMATCH POSSIBLE)
+            merged = truth_clean.merge(
+                submission_clean,
                 on=id_col,
                 suffixes=("_true", "_pred"),
                 how="inner"
             )
 
-            print(f"Truth rows: {len(truth_valid)} | Merged rows: {len(merged)}")
+            print(f"Truth rows: {len(truth_clean)} | Merged rows: {len(merged)}")
 
             if merged.empty:
                 print(f"Skipping {fname}: no matching IDs")
