@@ -6,7 +6,7 @@ from sklearn.metrics import f1_score
 # ----------------------------
 # Constants
 # ----------------------------
-PRIVATE_LABELS_ENV = "TEST_LABELS"
+PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
 
