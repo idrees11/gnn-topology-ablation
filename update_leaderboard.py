@@ -39,7 +39,10 @@ def load_private_labels():
         truth.columns = truth.columns.str.strip()
         # Ensure 'target' column exists
         if "target" not in truth.columns:
-            raise ValueError("Private labels CSV must contain 'target' column")
+            if "label" in truth.columns:
+                truth["target"] = truth["label"]
+            else:
+                raise ValueError("Private labels CSV must contain 'label' or 'target' column")
         return truth
     except Exception as e:
         print(f"ERROR: Failed to decode TEST_LABELS_B64: {e}")
@@ -49,7 +52,7 @@ def load_private_labels():
 # Score a single submission
 # ----------------------------
 def score_submission(sub_path, truth):
-    df = pd.read_csv(sub_path)
+    df = pd.read_csv(sub_path, sep=None, engine="python")  # auto-detect CSV/TSV
     df.columns = df.columns.str.strip()
     pred_col = "label" if "label" in df.columns else "target"
 
@@ -61,7 +64,7 @@ def score_submission(sub_path, truth):
     y_true = truth["target"].iloc[:min_len]
     y_pred = df[pred_col].iloc[:min_len]
 
-    return f1_score(y_true, y_pred, average="macro")
+    return round(f1_score(y_true, y_pred, average="macro"), 4)
 
 # ----------------------------
 # Write leaderboard markdown
@@ -69,26 +72,30 @@ def score_submission(sub_path, truth):
 def write_leaderboard(entries):
     os.makedirs(LEADERBOARD_DIR, exist_ok=True)
     with open(LEADERBOARD_FILE, "w") as f:
-        f.write("# 🏆 Competition Leaderboard\n\n")
+        f.write("# 🏆 GNN Challenge Leaderboard\n\n")
         f.write("| Rank | Participant | F1 Score | Submission | Timestamp |\n")
         f.write("|------|------------|----------|------------|-----------|\n")
 
         if not entries:
             f.write("| - | - | - | - | - |\n")
             print("Leaderboard is empty (no submissions).")
-        else:
-            # Sort entries by score descending, errors last
-            entries_sorted = sorted(
-                entries,
-                key=lambda x: float(x["f1_score"]) if isinstance(x["f1_score"], (int, float)) else -1,
-                reverse=True
+            return
+
+        # Sort entries by F1 descending; put N/A/errors last
+        def sort_key(x):
+            try:
+                return float(x["f1_score"])
+            except:
+                return -1  # N/A or Error at bottom
+
+        entries_sorted = sorted(entries, key=sort_key, reverse=True)
+
+        for i, e in enumerate(entries_sorted, start=1):
+            f.write(
+                f"| {i} | {e['participant']} | {e['f1_score']} | "
+                f"{e['submission']} | {e['timestamp']} |\n"
             )
 
-            for i, e in enumerate(entries_sorted, start=1):
-                f.write(
-                    f"| {i} | {e['participant']} | {e['f1_score']} | "
-                    f"{e['submission']} | {e['timestamp']} |\n"
-                )
     print(f"Leaderboard updated → {LEADERBOARD_FILE}")
 
 # ----------------------------
@@ -122,7 +129,6 @@ def update_leaderboard():
         })
 
     write_leaderboard(leaderboard)
-
 
 # ----------------------------
 # Entry point
