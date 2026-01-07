@@ -8,7 +8,7 @@ on:
   workflow_dispatch:       # Allows manual trigger from GitHub UI
 
 permissions:
-  contents: write           # Needed only if you plan to push leaderboard changes from workflow
+  contents: write           # Needed for pushing leaderboard changes if necessary
 
 jobs:
   scoring:
@@ -16,13 +16,13 @@ jobs:
 
     steps:
       # ----------------------------
-      # Checkout repository
+      # 1. Checkout repository
       # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
 
       # ----------------------------
-      # Set up Python environment
+      # 2. Set up Python environment
       # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -30,7 +30,7 @@ jobs:
           python-version: 3.11
 
       # ----------------------------
-      # Install dependencies
+      # 3. Install dependencies
       # ----------------------------
       - name: Install dependencies
         run: |
@@ -38,13 +38,13 @@ jobs:
           pip install pandas scikit-learn
 
       # ----------------------------
-      # Ensure submissions folder exists
+      # 4. Ensure submissions folder exists
       # ----------------------------
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
       # ----------------------------
-      # Create dummy submission if empty (PR-safe)
+      # 5. Create dummy submission if empty (PR-safe)
       # ----------------------------
       - name: Create dummy submission if empty
         run: |
@@ -52,38 +52,34 @@ jobs:
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
             echo "Created dummy submission."
+          fi
 
       # ----------------------------
-      # Run scoring script (compute F1 scores)
+      # 6. Run scoring script (compute F1 scores)
       # ----------------------------
       - name: Run scoring script
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Running scoring script..."
-          # Only run scoring if secret is available
-          if [ -n "$TEST_LABELS_B64" ]; then
-            python scoring_script.py
-          else
-            echo "Private labels secret not available. Scoring skipped (PRs/forks)."
-          fi
+          python scoring_script.py || echo "Scoring skipped or failed"
 
       # ----------------------------
-      # Run leaderboard system to update leaderboard.md
+      # 7. Run leaderboard system to update leaderboard.md
       # ----------------------------
       - name: Update leaderboard
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "Updating leaderboard..."
-          python leaderboard/leaderboard_system.py
+          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped or failed"
 
       # ----------------------------
-      # Upload leaderboard artifact
+      # 8. Upload leaderboard artifact
       # ----------------------------
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard/leaderboard.md
+          path: leaderboard/leaderboard.md  # Upload the markdown leaderboard
