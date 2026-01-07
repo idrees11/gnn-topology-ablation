@@ -23,6 +23,9 @@ submissions/*
 # But allow CSV submissions
 !submissions/*.csv
 
+# Track a placeholder file to keep folder
+!submissions/.gitkeep
+
 # OS and IDE
 .DS_Store
 Thumbs.db
