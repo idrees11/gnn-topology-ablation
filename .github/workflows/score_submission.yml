@@ -3,7 +3,7 @@ name: Score Submissions
 on:
   pull_request:
     branches: [main]
-  push:
+  push: 
     branches: [main]
   workflow_dispatch:
 
