@@ -2,84 +2,54 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches: [main]        # PRs to main (NO PUSH BACK)
+    branches: [main]
   push:
-    branches: [main]        # Push to main (CAN PUSH BACK)
-  workflow_dispatch:        # Manual trigger
+    branches: [main]
+  workflow_dispatch:
 
-# REQUIRED for git push from GitHub Actions
 permissions:
   contents: write
 
 jobs:
+  # -------------------------------------------------
+  # 1. SCORING JOB (PR-safe, NO PUSH)
+  # -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
 
     steps:
-      # ----------------------------
-      # 1. Checkout repository
-      # ----------------------------
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      # ----------------------------
-      # 2. Set up Python
-      # ----------------------------
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      # ----------------------------
-      # 3. Install dependencies
-      # ----------------------------
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install pandas scikit-learn
 
-      # ----------------------------
-      # 4. Ensure submissions folder exists
-      # ----------------------------
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      # ----------------------------
-      # 5. Create dummy submission (PR-safe)
-      # ----------------------------
       - name: Create dummy submission if empty
         run: |
           if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
             echo "graph_index,label" > submissions/dummy.csv
             echo "0,0" >> submissions/dummy.csv
-            echo "Dummy submission created."
           fi
 
-      # ----------------------------
-      # 6. Run scoring script
-      # ----------------------------
-      - name: Run scoring script
+      - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          echo "Running scoring script..."
-          python scoring_script.py || echo "Scoring skipped (expected for PRs)"
+          python scoring_script.py || echo "Scoring skipped (PR-safe)"
 
-      # ----------------------------
-      # 7. Update leaderboard
-      # ----------------------------
-      - name: Update leaderboard
-        env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
+      - name: Update leaderboard (local only)
         run: |
-          echo "Updating leaderboard..."
-          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped"
+          python leaderboard/leaderboard_system.py || true
 
-      # ----------------------------
-      # 8. Upload leaderboard artifact
-      # ----------------------------
       - name: Upload leaderboard artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -87,22 +57,28 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
-      # ----------------------------
-      # 9. Commit leaderboard (ONLY on push to main)
-      # ----------------------------
+  # -------------------------------------------------
+  # 2. COMMIT JOB (ONLY push to main)
+  # -------------------------------------------------
+  commit-leaderboard:
+    needs: scoring
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch (NOT detached)
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Commit leaderboard
-        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
 
-          git add leaderboard/leaderboard.md || true
-          git commit -m "Update leaderboard [skip ci]" || echo "No changes to commit"
+          git add leaderboard/leaderboard.md
+          git commit -m "Update leaderboard [skip ci]" || echo "No changes"
 
-      # ----------------------------
-      # 10. Push changes (ONLY on push to main)
-      # ----------------------------
-      - name: Push leaderboard
-        if: github.event_name == 'push'
-        run: |
-          git push
+      - name: Push changes
+        run: git push
