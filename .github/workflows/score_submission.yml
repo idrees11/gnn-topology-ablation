@@ -46,13 +46,13 @@ jobs:
         run: |
           python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
 
-      - name: Upload scores artifact
+      - name: Upload scores for leaderboard
         uses: actions/upload-artifact@v4
         with:
           name: scores-json
           path: scores.json
 
-      - name: Update leaderboard locally
+      - name: Update leaderboard (local only)
         run: |
           if [ -f scores.json ]; then
             python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
@@ -81,15 +81,16 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Commit updated leaderboard
+      - name: Copy runner leaderboard into repo folder
+        run: |
+          mkdir -p .github/data/leaderboard
+          cp -f leaderboard/leaderboard.md .github/data/leaderboard/leaderboard.md
+
+      - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
-          
-          # Add the leaderboard file
-          git add leaderboard/leaderboard.md
-          
-          # Commit only if there are changes
+          git add .github/data/leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
 
       - name: Push changes
