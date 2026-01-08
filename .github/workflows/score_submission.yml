@@ -49,8 +49,10 @@ jobs:
           python scoring_script.py || echo "Scoring skipped (PR-safe)"
 
       - name: Update leaderboard (local only)
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}  # <--- ensure secret is available
         run: |
-          python leaderboard/leaderboard_system.py || true
+          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped (secret missing)"
 
       - name: Upload leaderboard artifact
         if: always()
