@@ -86,14 +86,16 @@ jobs:
 
       - name: Copy updated leaderboard into repo path
         run: |
-          mkdir -p leaderboard
-          cp leaderboard/leaderboard.md leaderboard/leaderboard.md
+          # Ensure the repo folder exists
+          mkdir -p .github/data/leaderboard
+          # Copy the runner leaderboard to repo path for commit
+          cp leaderboard/leaderboard.md .github/data/leaderboard/leaderboard.md
 
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
-          git add leaderboard/leaderboard.md
+          git add .github/data/leaderboard/leaderboard.md
           git commit -m "Update leaderboard [skip ci]" || echo "No changes"
 
       - name: Push changes
