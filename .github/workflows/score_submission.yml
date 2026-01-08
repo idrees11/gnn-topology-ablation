@@ -57,7 +57,7 @@ jobs:
 
       - name: Update leaderboard (local only)
         run: |
-          # Download the scores artifact (from this job) and update leaderboard
+          # Use scores.json directly for leaderboard update
           if [ -f scores.json ]; then
             python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
           else
