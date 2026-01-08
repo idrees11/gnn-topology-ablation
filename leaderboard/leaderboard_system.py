@@ -6,6 +6,8 @@ import base64
 import pandas as pd
 from datetime import datetime
 from sklearn.metrics import f1_score
+import argparse
+import json
 
 # ----------------------------
 # Constants: ensure folder exists
@@ -67,7 +69,11 @@ def write_leaderboard(entries):
             f.write("| - | - | - | - | - |\n")
             return
 
-        entries_sorted = sorted(entries, key=lambda x: float(x["f1_score"]) if isinstance(x["f1_score"], (int,float)) else -1, reverse=True)
+        entries_sorted = sorted(
+            entries, 
+            key=lambda x: float(x["f1_score"]) if isinstance(x["f1_score"], (int, float)) else -1, 
+            reverse=True
+        )
         for i, e in enumerate(entries_sorted, start=1):
             f.write(
                 f"| {i} | {e['participant']} | {e['f1_score']} | "
@@ -79,29 +85,51 @@ def write_leaderboard(entries):
 # ----------------------------
 # Main
 # ----------------------------
-def update_leaderboard():
+def update_leaderboard(scores_file=None):
     leaderboard = []
 
-    truth = load_private_labels()
-
-    for file in os.listdir(SUBMISSIONS_DIR):
-        if not file.endswith(".csv"):
-            continue
-        path = os.path.join(SUBMISSIONS_DIR, file)
-        participant = file.replace(".csv", "")
-        try:
-            score = "N/A" if truth is None else score_submission(path, truth)
-        except Exception as e:
-            print(f"ERROR scoring {file}: {e}")
-            score = "Error"
-        leaderboard.append({
-            "participant": participant,
-            "f1_score": score,
-            "submission": file,
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        })
+    if scores_file and os.path.exists(scores_file):
+        # Load scores from JSON (PR-safe)
+        with open(scores_file, "r") as f:
+            scores = json.load(f)
+        for s in scores:
+            leaderboard.append({
+                "participant": s.get("submission", "unknown").replace(".csv", ""),
+                "f1_score": s.get("f1_score", "N/A"),
+                "submission": s.get("submission", "N/A"),
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            })
+    else:
+        # Load submissions and private labels
+        truth = load_private_labels()
+        for file in os.listdir(SUBMISSIONS_DIR):
+            if not file.endswith(".csv"):
+                continue
+            path = os.path.join(SUBMISSIONS_DIR, file)
+            participant = file.replace(".csv", "")
+            try:
+                score = "N/A" if truth is None else score_submission(path, truth)
+            except Exception as e:
+                print(f"ERROR scoring {file}: {e}")
+                score = "Error"
+            leaderboard.append({
+                "participant": participant,
+                "f1_score": score,
+                "submission": file,
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            })
 
     write_leaderboard(leaderboard)
 
+# ----------------------------
+# CLI
+# ----------------------------
 if __name__ == "__main__":
-    update_leaderboard()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--scores", type=str, default=None, 
+        help="Optional path to scores.json to update leaderboard PR-safe"
+    )
+    args = parser.parse_args()
+
+    update_leaderboard(scores_file=args.scores)
