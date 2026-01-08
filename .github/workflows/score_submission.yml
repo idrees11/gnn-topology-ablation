@@ -46,13 +46,23 @@ jobs:
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          python scoring_script.py || echo "Scoring skipped (PR-safe)"
+          # scoring_script.py now saves scores to scores.json
+          python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
+
+      - name: Upload scores for leaderboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: scores-json
+          path: scores.json
 
       - name: Update leaderboard (local only)
-        env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}  # <--- ensure secret is available
         run: |
-          python leaderboard/leaderboard_system.py || echo "Leaderboard update skipped (secret missing)"
+          # Download the scores artifact (from this job) and update leaderboard
+          if [ -f scores.json ]; then
+            python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
+          else
+            echo "No scores.json found, skipping leaderboard update"
+          fi
 
       - name: Upload leaderboard artifact
         if: always()
