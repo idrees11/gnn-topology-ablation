@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.metrics import f1_score
 import base64
 import io
+import json
 
 # ----------------------------
 # Constants
@@ -11,6 +12,7 @@ import io
 PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
+SCORES_JSON_FILE = "scores.json"  # <-- new
 
 print("Running scoring_script.py from:", sys.argv[0])
 
@@ -151,7 +153,7 @@ else:
             })
 
 # ----------------------------
-# Save leaderboard
+# Save leaderboard CSV
 # ----------------------------
 leaderboard = pd.DataFrame(scores)
 
@@ -160,3 +162,13 @@ if not leaderboard.empty and truth is not None:
 
 leaderboard.to_csv(LEADERBOARD_FILE, index=False)
 print(f"Leaderboard saved to {LEADERBOARD_FILE}")
+
+# ----------------------------
+# Save scores JSON for leaderboard step
+# ----------------------------
+try:
+    with open(SCORES_JSON_FILE, "w") as f:
+        json.dump(scores, f, indent=2)
+    print(f"Scores saved to {SCORES_JSON_FILE} for leaderboard update")
+except Exception as e:
+    print(f"ERROR: Failed to save {SCORES_JSON_FILE}: {e}")
