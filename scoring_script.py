@@ -105,7 +105,7 @@ else:
             print("ID dtype (truth):", truth_clean[id_col].dtype)
             print("ID dtype (submission):", submission_clean[id_col].dtype)
 
-            # Merge truth and submission
+            # Merge truth and submission with suffixes to avoid KeyError
             merged = truth_clean.merge(
                 submission_clean,
                 on=id_col,
@@ -117,6 +117,13 @@ else:
 
             if merged.empty:
                 print(f"Skipping {fname}: no matching IDs")
+                continue
+
+            # Safety check: columns exist
+            required_cols = [f"{truth_col}_true", f"{submission_col}_pred"]
+            missing = [c for c in required_cols if c not in merged.columns]
+            if missing:
+                print(f"Skipping {fname}: missing columns {missing}")
                 continue
 
             # Compute F1 score
