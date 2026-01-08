@@ -46,7 +46,6 @@ jobs:
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          # scoring_script.py now saves scores to scores.json
           python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
 
       - name: Upload scores for leaderboard
@@ -57,7 +56,6 @@ jobs:
 
       - name: Update leaderboard (local only)
         run: |
-          # Use scores.json directly for leaderboard update
           if [ -f scores.json ]; then
             python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
           else
@@ -86,11 +84,15 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Copy updated leaderboard into repo path
+        run: |
+          mkdir -p leaderboard
+          cp leaderboard/leaderboard.md leaderboard/leaderboard.md
+
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
-
           git add leaderboard/leaderboard.md
           git commit -m "Update leaderboard [skip ci]" || echo "No changes"
 
