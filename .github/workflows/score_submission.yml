@@ -60,11 +60,11 @@ jobs:
           path: leaderboard/leaderboard.md
 
   # -------------------------------------------------
-  # 2. COMMIT JOB (ONLY push to main)
+  # 2. COMMIT JOB (push + manual run)
   # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
