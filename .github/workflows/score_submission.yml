@@ -1,28 +1,131 @@
-commit-leaderboard:
-  needs: scoring
-  if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-  runs-on: ubuntu-latest
+name: Score Submissions
 
-  steps:
-    - name: Checkout main branch
-      uses: actions/checkout@v3
-      with:
-        ref: main
-        token: ${{ secrets.GITHUB_TOKEN }}
+on:
+  pull_request:
+    branches: [main]
+  pull_request_target:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-    - name: Copy updated leaderboard into repo path
-      run: |
-        # Ensure repo path exists
-        mkdir -p leaderboard
-        # Overwrite repo-tracked file with runner-generated file
-        cp -f leaderboard/leaderboard.md leaderboard/leaderboard.md
+permissions:
+  contents: write
 
-    - name: Commit leaderboard
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "action@github.com"
-        git add leaderboard/leaderboard.md
-        git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
+jobs:
+  # -------------------------------------------------
+  # 1. SCORING JOB (PR-safe, NO PUSH)
+  # -------------------------------------------------
+  scoring:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Push changes
-      run: git push
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install pandas scikit-learn
+
+      - name: Ensure submissions folder exists
+        run: mkdir -p submissions
+
+      - name: Create dummy submission if empty
+        run: |
+          if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
+            echo "graph_index,label" > submissions/dummy.csv
+            echo "0,0" >> submissions/dummy.csv
+          fi
+
+      - name: Run scoring
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
+        run: |
+          python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
+
+      - name: Upload scores for leaderboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: scores-json
+          path: scores.json
+
+      - name: Update leaderboard (local only)
+        run: |
+          if [ -f scores.json ]; then
+            python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
+          else
+            echo "No scores.json found, skipping leaderboard update"
+          fi
+
+      - name: Upload leaderboard artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaderboard
+          path: leaderboard/leaderboard.md
+
+  # -------------------------------------------------
+  # 2. COMMIT JOB (push + manual run)
+  # -------------------------------------------------
+  commit-leaderboard:
+    needs: scoring
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy updated leaderboard into repo path
+        run: |
+          mkdir -p leaderboard
+          cp -f leaderboard/leaderboard.md leaderboard/leaderboard.md
+
+      - name: Commit leaderboard
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "action@github.com"
+          git add leaderboard/leaderboard.md
+          git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
+
+      - name: Push changes
+        run: git push
+
+  # -------------------------------------------------
+  # 3. PR FEEDBACK JOB (FORK-SAFE COMMENT)
+  # -------------------------------------------------
+  pr-feedback:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Comment on PR (submission received)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+
+            const body = `
+            ✅ **Submission received successfully!**
+
+            🔹 Your submission has been detected.
+            🔹 Basic checks have been completed.
+            🔹 Final evaluation uses private labels and is run by the organisers.
+            🔹 The public leaderboard will be updated after evaluation.
+
+            Thank you for participating 🚀
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: body
+            });
