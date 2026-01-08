@@ -81,16 +81,15 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy updated leaderboard into repo path
-        run: |
-          mkdir -p leaderboard
-          cp -f leaderboard/leaderboard.md leaderboard/leaderboard.md
-
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
+
+          # Add the leaderboard file
           git add leaderboard/leaderboard.md
+
+          # Commit only if changes exist
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
 
       - name: Push changes
