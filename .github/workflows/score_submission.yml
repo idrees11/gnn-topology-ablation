@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main branch (NOT detached)
+      - name: Checkout main branch
         uses: actions/checkout@v3
         with:
           ref: main
@@ -87,15 +87,16 @@ jobs:
       - name: Copy updated leaderboard into repo path
         run: |
           # Ensure the repo folder exists
-          mkdir -p .github/data/leaderboard
-          # Copy the runner leaderboard to repo path for commit
-          cp leaderboard/leaderboard.md .github/data/leaderboard/leaderboard.md
+          mkdir -p leaderboard
+          # Copy runner leaderboard to repo path for commit
+          cp leaderboard/leaderboard.md leaderboard/leaderboard.md.updated
+          mv leaderboard/leaderboard.md.updated leaderboard/leaderboard.md
 
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "action@github.com"
-          git add .github/data/leaderboard/leaderboard.md
+          git add leaderboard/leaderboard.md
           git commit -m "Update leaderboard [skip ci]" || echo "No changes"
 
       - name: Push changes
