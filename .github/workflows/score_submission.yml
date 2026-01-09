@@ -91,7 +91,7 @@ jobs:
       - name: Copy updated leaderboard into repo folder
         run: |
           mkdir -p .github/data/leaderboard
-          cp -f leaderboard/leaderboard.md leaderboard/leaderboard.md
+          cp -f leaderboard/leaderboard.md .github/data/leaderboard/leaderboard.md
 
       - name: Commit and push leaderboard
         run: |
