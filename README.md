@@ -1,14 +1,17 @@
 🧠 GNN Challenge: Graph Classification with Topological Features
 Overview
-    
+
 Welcome to the Graph Neural Networks (GNN) Challenge!
-This competition focuses on graph classification using message-passing neural networks, with an emphasis on topological (structural) feature augmentation. Participants are challenged to design models that effectively combine node features, graph structure, and topological descriptors to improve classification performance.
-    
-The challenge is small, fast, yet non-trivial, and can be fully solved using methods covered in DGL Lectures 1.1–4.6 (https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T).
+
+This competition focuses on graph-level classification using message-passing neural networks (MPNNs), with a strong emphasis on topological (structural) feature augmentation. Participants are expected to design models that effectively combine node features, graph structure, and structural descriptors to improve classification performance.
+
+The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
+👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
 
 🎯 Problem Statement
-       
-Given a graph 
+
+Given a graph
+
 𝐺
 =
 (
@@ -16,11 +19,15 @@ Given a graph
 ,
 𝐸
 )
-G=(V,E), predict its graph-level class label.
+G=(V,E)
 
-Each graph represents a molecular structure from the MUTAG dataset.
+predict its graph-level class label.
 
-Basic node features are provided, but the main challenge is to leverage graph topology effectively.
+Each graph represents a molecular structure from the MUTAG dataset
+
+Basic node features are provided
+
+The main challenge is to leverage graph topology effectively
 
 🧩 Problem Type
 
@@ -40,15 +47,17 @@ Graph Isomorphism Networks (GIN)
 
 Neighborhood aggregation
 
-Graph-level readout (global mean pooling)
+Graph-level readout (e.g., global mean pooling)
 
-Structural / Topological Node Features:
+Structural / Topological Node Features
 
-Degree
+You are encouraged to experiment with:
 
-Clustering Coefficient
+Node degree
 
-Betweenness Centrality
+Clustering coefficient
+
+Betweenness centrality
 
 PageRank
 
@@ -56,40 +65,41 @@ k-core number
 
 📦 Dataset
 
-Dataset: MUTAG (TUDataset)
+Dataset: MUTAG (from TUDataset)
 
 Graphs: 188 molecular graphs
 
-Classes: 2 (binary classification)
+Classes: 2 (binary)
 
-Nodes per graph: ~17 (average)
+Average nodes per graph: ~17
 
 Edges: Undirected
 
 Source: Automatically downloaded from TUDataset
 
-Small enough for quick experimentation, but rich enough to benefit from structural features.
+The dataset is small enough for fast experimentation, yet rich enough to benefit from structural features.
 
 🗂️ Data Splits
 
-The dataset is split once using a fixed random seed to ensure fair comparison:
+A fixed random seed is used to ensure fair comparison.
 
 Split	Percentage
 Train	70%
 Validation	10%
 Test	20%
 
-Files provided in data/:
+Files in data/:
 
 train.csv → graph indices + labels
 
 test.csv → graph indices only (labels hidden)
 
-⚠️ Test labels are hidden and used only for scoring by organizers.
+⚠️ Test labels are hidden and used only by the organisers for scoring.
 
-📊 Objective Metric
-
+📊 Evaluation Metric
 Macro F1-score
+f1_score(y_true, y_pred, average="macro")
+
 
 Why Macro F1?
 
@@ -99,7 +109,7 @@ Encourages balanced performance across classes
 
 Difficult to optimize directly
 
-This is the official ranking metric.
+Used as the official leaderboard metric
 
 ⚙️ Constraints
 
@@ -113,7 +123,7 @@ To keep the competition fair and focused:
 
 ⏱ Models must run within 10 minutes on CPU
 
-✅ Any GNN architecture is allowed (GIN, GCN, GraphSAGE, etc.)
+✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
 
 🚀 Getting Started
 1️⃣ Install Dependencies
@@ -126,15 +136,17 @@ python baseline.py
 
 This will:
 
-Train a simple GIN model
+Train a simple GIN baseline
 
 Generate predictions on the test set
 
-Save a submission file to submissions/sample_submission.csv
+Save a submission file to:
+
+submissions/sample_submission.csv
 
 📤 Submission Format
 
-Your submission must be a CSV file with the following format:
+Submissions must be CSV files with the following format:
 
 graph_index,target
 0,1
@@ -149,28 +161,30 @@ target: Predicted class label (0 or 1)
 
 🧪 Scoring
 
-Submissions are evaluated using:
+Submissions are evaluated using hidden test labels:
 
 f1_score(y_true, y_pred, average="macro")
 
 
-Scores are computed using a hidden test label file.
+Scores are computed automatically by the organiser’s scoring pipeline.
 
 🏆 Leaderboard
 
-Submissions are ranked by Macro F1-score (higher is better)
+Ranked by Macro F1-score (higher is better)
 
 Ties are broken by submission time
 
-Leaderboard is maintained in: leaderboard.md
+Leaderboard is maintained in:
+
+leaderboard/leaderboard.md
 
 💡 Tips for Success
 
 Structural features matter more than you think
 
-Experiment with different combinations of topological features
+Try different combinations of topological descriptors
 
-Regularization is important for small datasets
+Regularization is crucial for small datasets
 
 Simpler models often generalize better
 
@@ -191,43 +205,29 @@ gnn-challenge/
 │   └── sample_submission.csv
 │
 ├── scoring_script.py
-├── leaderboard.md
+├── leaderboard/
+│   └── leaderboard.md
 └── README.md
 
 🏁 Step-by-Step Commands
-# 1️⃣ Go to starter_code folder
+# 1️⃣ Enter starter code directory
 cd starter_code
 
-# 2️⃣ Run the baseline to generate submission
+# 2️⃣ Run baseline model
 python baseline.py
 
-# 3️⃣ Go back to repo root
+# 3️⃣ Return to repository root
 cd ..
 
-# 4️⃣ Check that submission exists
+# 4️⃣ Verify submission file
 dir submissions
 
-# 5️⃣ Score the submission
-python scoring_script.py submissions\sample_submission.csv
-
-
-What Each Step Does:
-
-cd starter_code → enters folder with baseline.py
-
-python baseline.py → trains the model and saves submission CSV
-
-cd .. → returns to repo root
-
-dir submissions → verifies CSV presence
-
-python scoring_script.py ... → computes and prints F1-score
+# 5️⃣ (Optional) Local scoring (organisers only)
+python scoring_script.py submissions/sample_submission.csv
 
 📬 Contact
 
 For questions or clarifications, please open a GitHub Issue.
-
-Good luck — and happy graph learning! 🧠📊
 
 📜 License
 
