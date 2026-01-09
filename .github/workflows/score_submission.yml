@@ -9,6 +9,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# 🔒 Prevent parallel leaderboard updates
+concurrency:
+  group: leaderboard-update
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
@@ -87,15 +92,18 @@ jobs:
           name: leaderboard
           path: leaderboard
 
-      # ✅ No copy step needed — file is already in correct location
+      # ✅ No copy step — file already in correct location
 
-      - name: Commit and push leaderboard
+      - name: Commit and push leaderboard (race-safe)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
+
+          # 🔁 Sync with remote to avoid push rejection
+          git pull --rebase origin main
           git push
 
   # -------------------------------------------------
