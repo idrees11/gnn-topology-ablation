@@ -81,24 +81,20 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🔴 CRITICAL: Download leaderboard from scoring job
       - name: Download leaderboard artifact
         uses: actions/download-artifact@v4
         with:
           name: leaderboard
           path: leaderboard
 
-      - name: Copy updated leaderboard into repo folder
-        run: |
-          mkdir -p .github/data/leaderboard
-          cp -f leaderboard/leaderboard.md .github/data/leaderboard/leaderboard.md
+      # ✅ No copy step needed — file is already in correct location
 
       - name: Commit and push leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add .github/data/leaderboard/leaderboard.md
+          git add leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
           git push
 
