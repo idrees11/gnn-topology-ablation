@@ -13,11 +13,12 @@ to improve classification performance.
 
 The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
 👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
-</pre>pre>
+</pre>
+
 ****🏆 View Live Leaderboard****
-
+<pre>
 (Link to your leaderboard page or GitHub file here)
-
+</pre>
 **🧩 Problem Description**
 
 The task is to predict a graph-level class label for each input graph.
