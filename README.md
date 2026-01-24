@@ -14,7 +14,7 @@ to improve classification performance.
 The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
 👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
 
-**🏆 View Live Leaderboard**
+****🏆 View Live Leaderboard****
 
 (Link to your leaderboard page or GitHub file here)
 
@@ -31,7 +31,7 @@ Basic node features
 
 Your goal is to build a GNN that leverages graph topology effectively, especially through structural / topological feature augmentation.
 
-**🧠 Problem Type**
+****🧠 Problem Type****
 
 Graph Classification
 
@@ -39,7 +39,7 @@ Supervised Learning
 
 Binary Classification
 
-**📚 Relevant GNN Concepts (DGL 1.1–4.6)**
+****📚 Relevant GNN Concepts (DGL 1.1–4.6)****
 
 This challenge can be solved using:
 
@@ -65,7 +65,7 @@ PageRank
 
 k-core number
 
-**📦 Dataset**
+****📦 Dataset****
 
 Dataset: MUTAG (from TUDataset)
 
@@ -81,7 +81,7 @@ Source: Automatically downloaded from TUDataset
 
 The dataset is small enough for fast experimentation, yet rich enough to benefit strongly from structural features.
 
-**🗂️ Data Splits**
+****🗂️ Data Splits****
 
 A fixed random seed is used to ensure fair comparison.
 
@@ -98,7 +98,7 @@ test.csv → graph indices only (labels hidden)
 
 ⚠️ Test labels are hidden and used only by the organisers for scoring.
 
-**📊 Evaluation Metric**
+****📊 Evaluation Metric****
 
 Primary Metric: Macro F1-score
 
@@ -114,7 +114,7 @@ Difficult to optimize directly
 
 Used as the official leaderboard metric
 
-**⚙️ Constraints**
+****⚙️ Constraints****
 
 To keep the competition fair and focused:
 
@@ -130,7 +130,7 @@ To keep the competition fair and focused:
 
 ✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
 
-**🚀 Getting Started**
+****🚀 Getting Started****
 
 1️⃣ Install Dependencies
 pip install -r starter_code/requirements.txt
@@ -150,7 +150,7 @@ Save a submission file to:
 
 submissions/sample_submission.csv
 
-**📤 Submission Format**
+****📤 Submission Format****
 
 Submissions must be CSV files with the following format:
 
@@ -171,7 +171,7 @@ Your submission file should be named:
 
 submissions/your_team_name.csv
 
-**🧪 Scoring**
+****🧪 Scoring****
 
 Submissions are evaluated using hidden test labels:
 
@@ -180,7 +180,7 @@ f1_score(y_true, y_pred, average="macro")
 
 Scores are computed automatically by the organiser’s scoring pipeline.
 
-**🏆 Leaderboard**
+****🏆 Leaderboard****
 
 The leaderboard is automatically updated when you submit your solution.
 
@@ -198,7 +198,7 @@ Leaderboard file:
 
 leaderboard/leaderboard.md
 
-**💡 Tips for Success**
+****💡 Tips for Success****
 
 Structural features matter more than you think
 
@@ -210,7 +210,7 @@ Simpler models often generalize better
 
 GIN + structural features is a strong baseline
 
-## 📁 Repository Structure  
+**## 📁 Repository Structure ** 
 
 ```text
 gnn-challenge/
@@ -237,7 +237,7 @@ gnn-challenge/
 
 
 
-**🏁 Step-by-Step Commands**
+****🏁 Step-by-Step Commands****
 1️⃣ Enter starter code directory
 cd starter_code
 
@@ -253,11 +253,11 @@ ls submissions
 5️⃣ (Optional) Local scoring (organisers only)
 python scoring_script.py submissions/sample_submission.csv
 
-**📬 Contact**
+****📬 Contact****
 
 For questions or clarifications, please open a GitHub Issue in this repository.
 
-📜 License
+**📜 License**
 
 This project is released under the MIT License.
 See the LICENSE file for details.
