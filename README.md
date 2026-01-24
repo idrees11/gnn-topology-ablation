@@ -214,7 +214,7 @@ Simpler models often generalize better
 
 GIN + structural features is a strong baseline
 
-📁 Repository Structure
+...📁 Repository Structure
 gnn-challenge/
 │
 ├── data/
