@@ -1,35 +1,41 @@
 🧠 GNN Challenge: Graph Classification with Topological Features
-Overview
 
-Welcome to the Graph Neural Networks (GNN) Challenge!
+🎯 Challenge Overview
 
-This competition focuses on graph-level classification using message-passing neural networks (MPNNs), with a strong emphasis on topological (structural) feature augmentation. Participants are expected to design models that effectively combine node features, graph structure, and structural descriptors to improve classification performance.
+Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
+This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with a strong emphasis on topological (structural) feature augmentation.
+
+Participants are expected to design models that effectively combine:
+
+Node features
+
+Graph structure
+
+Structural / topological descriptors
+
+to improve classification performance.
 
 The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
 👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
 
-🎯 Problem Statement
+🏆 View Live Leaderboard
 
-Given a graph
+(Link to your leaderboard page or GitHub file here)
 
-𝐺
-=
-(
-𝑉
-,
-𝐸
-)
-G=(V,E)
+🧩 Problem Description
 
-predict its graph-level class label.
+The task is to predict a graph-level class label for each input graph.
 
-Each graph represents a molecular structure from the MUTAG dataset
+Each graph represents a molecular structure from the MUTAG dataset.
+You are given:
 
-Basic node features are provided
+The graph topology
 
-The main challenge is to leverage graph topology effectively
+Basic node features
 
-🧩 Problem Type
+Your goal is to build a GNN that leverages graph topology effectively, especially through structural / topological feature augmentation.
+
+🧠 Problem Type
 
 Graph Classification
 
@@ -47,7 +53,7 @@ Graph Isomorphism Networks (GIN)
 
 Neighborhood aggregation
 
-Graph-level readout (e.g., global mean pooling)
+Graph-level readout (e.g., global mean / sum pooling)
 
 Structural / Topological Node Features
 
@@ -77,7 +83,7 @@ Edges: Undirected
 
 Source: Automatically downloaded from TUDataset
 
-The dataset is small enough for fast experimentation, yet rich enough to benefit from structural features.
+The dataset is small enough for fast experimentation, yet rich enough to benefit strongly from structural features.
 
 🗂️ Data Splits
 
@@ -97,11 +103,12 @@ test.csv → graph indices only (labels hidden)
 ⚠️ Test labels are hidden and used only by the organisers for scoring.
 
 📊 Evaluation Metric
-Macro F1-score
+
+Primary Metric: Macro F1-score
+
 f1_score(y_true, y_pred, average="macro")
 
-
-Why Macro F1?
+Why Macro-F1?
 
 Sensitive to class imbalance
 
@@ -118,6 +125,8 @@ To keep the competition fair and focused:
 ❌ No external datasets
 
 ❌ No pretraining
+
+❌ No handcrafted features beyond allowed topology features
 
 ✅ Only methods covered in DGL Lectures 1.1–4.6
 
@@ -155,9 +164,15 @@ graph_index,target
 ...
 
 
-graph_index: Index of the graph in the dataset
+Columns:
 
-target: Predicted class label (0 or 1)
+graph_index → Index of the graph in the dataset
+
+target → Predicted class label (0 or 1)
+
+Your submission file should be named:
+
+submissions/your_team_name.csv
 
 🧪 Scoring
 
@@ -170,11 +185,19 @@ Scores are computed automatically by the organiser’s scoring pipeline.
 
 🏆 Leaderboard
 
-Ranked by Macro F1-score (higher is better)
+The leaderboard is automatically updated when you submit your solution.
 
-Ties are broken by submission time
+The leaderboard shows:
 
-Leaderboard is maintained in:
+Rank
+
+Team Name
+
+Macro F1-score
+
+Submission Time
+
+Leaderboard file:
 
 leaderboard/leaderboard.md
 
@@ -187,6 +210,8 @@ Try different combinations of topological descriptors
 Regularization is crucial for small datasets
 
 Simpler models often generalize better
+
+GIN + structural features is a strong baseline
 
 📁 Repository Structure
 gnn-challenge/
@@ -205,30 +230,33 @@ gnn-challenge/
 │   └── sample_submission.csv
 │
 ├── scoring_script.py
+│
 ├── leaderboard/
 │   └── leaderboard.md
+│
 └── README.md
 
 🏁 Step-by-Step Commands
-# 1️⃣ Enter starter code directory
+1️⃣ Enter starter code directory
 cd starter_code
 
-# 2️⃣ Run baseline model
+2️⃣ Run baseline model
 python baseline.py
 
-# 3️⃣ Return to repository root
+3️⃣ Return to repository root
 cd ..
 
-# 4️⃣ Verify submission file
-dir submissions
+4️⃣ Verify submission file
+ls submissions
 
-# 5️⃣ (Optional) Local scoring (organisers only)
+5️⃣ (Optional) Local scoring (organisers only)
 python scoring_script.py submissions/sample_submission.csv
 
 📬 Contact
 
-For questions or clarifications, please open a GitHub Issue.
+For questions or clarifications, please open a GitHub Issue in this repository.
 
 📜 License
 
 This project is released under the MIT License.
+See the LICENSE file for details.
