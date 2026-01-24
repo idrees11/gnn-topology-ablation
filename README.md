@@ -6,6 +6,7 @@ Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
 This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with a strong emphasis on topological (structural) feature augmentation.
 
 Participants are expected to design models that effectively combine:
+  
 Node features
 Graph structure
 Structural / topological descriptors
@@ -19,9 +20,9 @@ The challenge is small, fast, and non-trivial, and can be fully solved using con
 <pre>
 (Link to your leaderboard page or GitHub file here)
 </pre>
-<pre>
-**🧩 Problem Description**
 
+**🧩 Problem Description**
+<pre>
 The task is to predict a graph-level class label for each input graph.
 
 Each graph represents a molecular structure from the MUTAG dataset.
