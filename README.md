@@ -5,16 +5,13 @@
 Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
 This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with a strong emphasis on topological (structural) feature augmentation.
 
+```text
 Participants are expected to design models that effectively combine:
-
 Node features
-
 Graph structure
-
 Structural / topological descriptors
-
 to improve classification performance.
-
+```text
 The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
 👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
 
