@@ -19,6 +19,7 @@ The challenge is small, fast, and non-trivial, and can be fully solved using con
 <pre>
 (Link to your leaderboard page or GitHub file here)
 </pre>
+<pre>
 **🧩 Problem Description**
 
 The task is to predict a graph-level class label for each input graph.
@@ -31,17 +32,19 @@ The graph topology
 Basic node features
 
 Your goal is to build a GNN that leverages graph topology effectively, especially through structural / topological feature augmentation.
+</pre>
 
 ****🧠 Problem Type****
-
+<pre>
 Graph Classification
 
 Supervised Learning
 
 Binary Classification
+</pre>
 
 ****📚 Relevant GNN Concepts (DGL 1.1–4.6)****
-
+<pre>
 This challenge can be solved using:
 
 Message Passing Neural Networks (MPNNs)
@@ -65,9 +68,10 @@ Betweenness centrality
 PageRank
 
 k-core number
+</pre>
 
 ****📦 Dataset****
-
+<pre>
 Dataset: MUTAG (from TUDataset)
 
 Graphs: 188 molecular graphs
@@ -81,9 +85,9 @@ Edges: Undirected
 Source: Automatically downloaded from TUDataset
 
 The dataset is small enough for fast experimentation, yet rich enough to benefit strongly from structural features.
-
+</pre>
 ****🗂️ Data Splits****
-
+<pre>
 A fixed random seed is used to ensure fair comparison.
 
 Split	Percentage
@@ -98,9 +102,10 @@ train.csv → graph indices + labels
 test.csv → graph indices only (labels hidden)
 
 ⚠️ Test labels are hidden and used only by the organisers for scoring.
+</pre>
 
 ****📊 Evaluation Metric****
-
+<pre>
 Primary Metric: Macro F1-score
 
 f1_score(y_true, y_pred, average="macro")
@@ -114,9 +119,10 @@ Encourages balanced performance across classes
 Difficult to optimize directly
 
 Used as the official leaderboard metric
+</pre>
 
 ****⚙️ Constraints****
-
+<pre>
 To keep the competition fair and focused:
 
 ❌ No external datasets
@@ -130,9 +136,11 @@ To keep the competition fair and focused:
 ⏱ Models must run within 10 minutes on CPU
 
 ✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
+</pre>
 
 ****🚀 Getting Started****
-
+<pre>
+  
 1️⃣ Install Dependencies
 pip install -r starter_code/requirements.txt
 
@@ -141,7 +149,7 @@ cd starter_code
 python baseline.py
 
 
-This will:
+**This will:**
 
 Train a simple GIN baseline
 
@@ -150,9 +158,10 @@ Generate predictions on the test set
 Save a submission file to:
 
 submissions/sample_submission.csv
+</pre>
 
 ****📤 Submission Format****
-
+<pre>
 Submissions must be CSV files with the following format:
 
 graph_index,target
@@ -171,18 +180,20 @@ target → Predicted class label (0 or 1)
 Your submission file should be named:
 
 submissions/your_team_name.csv
+</pre>
 
 ****🧪 Scoring****
-
+<pre>
 Submissions are evaluated using hidden test labels:
 
 f1_score(y_true, y_pred, average="macro")
 
 
 Scores are computed automatically by the organiser’s scoring pipeline.
+</pre>
 
 ****🏆 Leaderboard****
-
+<pre>
 The leaderboard is automatically updated when you submit your solution.
 
 The leaderboard shows:
@@ -198,9 +209,10 @@ Submission Time
 Leaderboard file:
 
 leaderboard/leaderboard.md
+</pre>
 
 ****💡 Tips for Success****
-
+<pre>
 Structural features matter more than you think
 
 Try different combinations of topological descriptors
@@ -210,9 +222,9 @@ Regularization is crucial for small datasets
 Simpler models often generalize better
 
 GIN + structural features is a strong baseline
-
+</pre>
 **## 📁 Repository Structure ** 
-
+<pre>
 ```text
 gnn-challenge/
 │
@@ -235,10 +247,11 @@ gnn-challenge/
 │   └── leaderboard.md
 │
 └── README.md
-
-
+</pre>
 
 ****🏁 Step-by-Step Commands****
+<pre>
+  
 1️⃣ Enter starter code directory
 cd starter_code
 
@@ -254,11 +267,18 @@ ls submissions
 5️⃣ (Optional) Local scoring (organisers only)
 python scoring_script.py submissions/sample_submission.csv
 
+</pre>
+
 ****📬 Contact****
+<pre>
 
 For questions or clarifications, please open a GitHub Issue in this repository.
+</pre>
 
 **📜 License**
-
+<pre>
 This project is released under the MIT License.
 See the LICENSE file for details.
+</pre>
+
+<>
