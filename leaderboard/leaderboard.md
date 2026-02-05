@@ -1,6 +1,6 @@
-# 🏆 GNN Topology Ablation Challenge Leaderboard
+# 🏆 GNN Challenge Leaderboard
 
 | Rank | Participant | F1 Score | Submission | Timestamp |
 |------|------------|----------|------------|-----------|
-| 1 | sample_sub | 1.0 | sample_sub.csv | 2026-02-05 07:35:24 UTC |
-| 2 | sample_submission | 0.396825 | sample_submission.csv | 2026-02-05 07:35:24 UTC |
+| 1 | sample_sub | 1.0 | sample_sub.csv | 2026-02-05 07:43:22 UTC |
+| 2 | sample_submission | 0.396825 | sample_submission.csv | 2026-02-05 07:43:22 UTC |
