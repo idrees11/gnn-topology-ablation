@@ -1,4 +1,4 @@
-# 🏆 GNN Challenge Leaderboard
+# 🏆 GNN Topology Ablation Challenge Leaderboard
 
 | Rank | Participant | F1 Score | Submission | Timestamp |
 |------|------------|----------|------------|-----------|
