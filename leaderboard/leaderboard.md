@@ -1,6 +1,5 @@
-# 🏆 GNN Challenge Leaderboard
+# 🏆 GNN Robustness Challenge Leaderboard
 
-| Rank | Participant | F1 Score | Submission | Timestamp |
-|------|------------|----------|------------|-----------|
-| 1 | sample_sub | 1.0 | sample_sub.csv | 2026-02-10 10:05:52 UTC |
-| 2 | sample_submission | 0.396825 | sample_submission.csv | 2026-02-10 10:05:52 UTC |
+| Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |
+|------|------------|---------|--------------|----------------|-----------|
+| - | - | - | - | - | - |
