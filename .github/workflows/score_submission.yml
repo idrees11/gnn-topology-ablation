@@ -23,8 +23,11 @@ jobs:
   scoring:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      # ✅ IMPORTANT: checkout PR HEAD files safely
+      - name: Checkout PR files
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,14 +40,8 @@ jobs:
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      - name: Create dummy submission if empty
-        run: |
-          if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
-            echo "graph_index,label" > submissions/dummy.csv
-            echo "0,0" >> submissions/dummy.csv
-          fi
+      # ❌ Removed dummy submission (not needed now)
 
-      # ✅ UPDATED: dual scoring supported
       - name: Run scoring (ideal + perturbed)
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -57,7 +54,6 @@ jobs:
           name: scores-json
           path: scores.json
 
-      # ✅ IMPORTANT: pass scores.json to leaderboard
       - name: Update leaderboard locally
         run: |
           if [ -f scores.json ]; then
@@ -93,19 +89,18 @@ jobs:
           name: leaderboard
           path: leaderboard
 
-      - name: Commit and push leaderboard (race-safe)
+      - name: Commit and push leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
-
           git pull --rebase origin main
           git push
 
   # -------------------------------------------------
-  # 3. PR FEEDBACK JOB (FORK-SAFE COMMENT)
+  # 3. PR FEEDBACK JOB
   # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
@@ -114,22 +109,21 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - name: Comment on PR (submission received)
+      - name: Comment on PR
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
-
             const body = `
-            ✅ **Submission received successfully!**
+            ✅ Submission received!
 
-            🔹 Ideal and perturbed submissions detected
-            🔹 Robustness evaluation completed
-            🔹 Leaderboard updated automatically
+            If your files were valid:
+            • Ideal submission scored
+            • Perturbed submission scored
+            • Leaderboard updated
 
-            Thank you for participating 🚀
+            Check the **Actions tab → latest run → scoring logs**
             `;
-
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
