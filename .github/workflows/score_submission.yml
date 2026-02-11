@@ -9,7 +9,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# 🔒 Prevent parallel leaderboard updates
 concurrency:
   group: leaderboard-update
   cancel-in-progress: false
@@ -24,8 +23,28 @@ jobs:
   scoring:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+
+      # ✅ Checkout organiser repo
+      - name: Checkout organiser repository
         uses: actions/checkout@v3
+
+      # ✅ NEW: Checkout PR fork content
+      - name: Checkout PR repository
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: pr_repo
+
+      # ✅ NEW: Copy submissions from participant fork
+      - name: Copy participant submissions
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+        run: |
+          mkdir -p submissions
+          if [ -d "pr_repo/submissions" ]; then
+            cp pr_repo/submissions/*.csv submissions/ || true
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -48,8 +67,7 @@ jobs:
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-        run: |
-          python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
+        run: python scoring_script.py || echo "Scoring skipped"
 
       - name: Upload scores artifact
         uses: actions/upload-artifact@v4
@@ -60,9 +78,7 @@ jobs:
       - name: Update leaderboard locally
         run: |
           if [ -f scores.json ]; then
-            python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
-          else
-            echo "No scores.json found, skipping leaderboard update"
+            python leaderboard/leaderboard_system.py --scores scores.json
           fi
 
       - name: Upload leaderboard artifact
@@ -92,9 +108,7 @@ jobs:
           name: leaderboard
           path: leaderboard
 
-      # ✅ No copy step — file already in correct location
-
-      - name: Commit and push leaderboard (race-safe)
+      - name: Commit and push leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -102,12 +116,11 @@ jobs:
           git add leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
 
-          # 🔁 Sync with remote to avoid push rejection
           git pull --rebase origin main
           git push
 
   # -------------------------------------------------
-  # 3. PR FEEDBACK JOB (FORK-SAFE COMMENT)
+  # 3. PR FEEDBACK JOB
   # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
@@ -116,7 +129,7 @@ jobs:
       pull-requests: write
       issues: write
     steps:
-      - name: Comment on PR (submission received)
+      - name: Comment on PR
         uses: actions/github-script@v7
         with:
           script: |
@@ -125,12 +138,11 @@ jobs:
             const body = `
             ✅ **Submission received successfully!**
 
-            🔹 Your submission has been detected.
-            🔹 Basic checks have been completed.
-            🔹 Final evaluation uses private labels and is run by the organisers.
-            🔹 The public leaderboard will be updated after evaluation.
+            🔹 Ideal and perturbed submissions detected
+            🔹 Private evaluation completed
+            🔹 Leaderboard will update automatically
 
-            Thank you for participating 🚀
+            Good luck in the robustness challenge 🚀
             `;
 
             await github.rest.issues.createComment({
