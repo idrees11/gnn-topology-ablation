@@ -5,6 +5,7 @@ from sklearn.metrics import f1_score
 import base64
 import io
 import json
+from datetime import datetime
 
 # ----------------------------
 # Constants
@@ -22,21 +23,17 @@ print("Running scoring_script.py from:", sys.argv[0])
 truth = None
 labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
 
-if not labels_b64:
-    print(
-        "INFO: Private labels unavailable.\n"
-        "Scoring skipped (EXPECTED for PRs/forks).\n"
-        "Scoring runs only on push to main or manual workflow trigger."
-    )
-else:
+if labels_b64:
     try:
         decoded = base64.b64decode(labels_b64)
         truth = pd.read_csv(io.BytesIO(decoded))
         truth.columns = truth.columns.str.strip().str.lower()
-        print("Loaded private labels from TEST_LABELS_B64")
+        print("Private labels loaded")
     except Exception as e:
-        print(f"ERROR: Failed to decode TEST_LABELS_B64: {e}")
+        print("ERROR decoding private labels:", e)
         truth = None
+else:
+    print("Private labels not available → scoring skipped")
 
 # ----------------------------
 # Detect truth column
@@ -48,19 +45,19 @@ if truth is not None:
     elif "target" in truth.columns:
         truth_col = "target"
     else:
-        print("ERROR: Private labels must contain 'label' or 'target'.")
+        print("ERROR: truth must contain label or target")
         truth = None
 
 # ----------------------------
-# Helper: compute score
+# Score helper
 # ----------------------------
 def compute_score(submission, truth):
     submission.columns = submission.columns.str.strip().str.lower()
 
     if "label" in submission.columns:
-        submission_col = "label"
+        pred_col = "label"
     elif "target" in submission.columns:
-        submission_col = "target"
+        pred_col = "target"
     else:
         return None
 
@@ -94,20 +91,21 @@ def compute_score(submission, truth):
         return None
 
     y_true = merged[f"{truth_col}_true"]
-    y_pred = merged[f"{submission_col}_pred"]
+    y_pred = merged[f"{pred_col}_pred"]
 
     return f1_score(y_true, y_pred, average="macro")
 
 # ----------------------------
-# Find paired submissions
+# Evaluate paired submission
 # ----------------------------
+scores = []
+
 ideal_path = os.path.join(SUBMISSIONS_FOLDER, "ideal_submission.csv")
 perturbed_path = os.path.join(SUBMISSIONS_FOLDER, "perturbed_submission.csv")
 
-scores = []
-
 if os.path.exists(ideal_path) and os.path.exists(perturbed_path):
-    print("\nDetected paired submissions (ideal + perturbed)")
+
+    print("Paired submission detected")
 
     if truth is not None:
         ideal_df = pd.read_csv(ideal_path)
@@ -117,45 +115,40 @@ if os.path.exists(ideal_path) and os.path.exists(perturbed_path):
         f1_perturbed = compute_score(perturbed_df, truth)
 
         if f1_ideal is not None and f1_perturbed is not None:
-            robustness = f1_perturbed / f1_ideal if f1_ideal > 0 else 0
+            robustness_gap = f1_ideal - f1_perturbed
             final_score = (f1_ideal + f1_perturbed) / 2
 
-            print(f"Ideal F1: {f1_ideal:.4f}")
-            print(f"Perturbed F1: {f1_perturbed:.4f}")
-            print(f"Robustness: {robustness:.4f}")
-
             scores.append({
-                "team": "latest_submission",
-                "ideal_f1": round(f1_ideal, 6),
-                "perturbed_f1": round(f1_perturbed, 6),
-                "robustness": round(robustness, 6),
-                "final_score": round(final_score, 6)
+                "rank": 1,
+                "participant": "latest_submission",
+                "f1_ideal": round(f1_ideal, 6),
+                "f1_perturbed": round(f1_perturbed, 6),
+                "robustness_gap": round(robustness_gap, 6),
+                "timestamp": datetime.utcnow().isoformat()
             })
+
+            print("Scoring complete")
         else:
-            print("ERROR: Could not compute both scores.")
-    else:
-        print("Found paired submissions (scoring skipped).")
-        scores.append({
-            "team": "latest_submission",
-            "ideal_f1": None,
-            "perturbed_f1": None,
-            "robustness": None,
-            "final_score": None
-        })
+            print("ERROR computing scores")
 
 else:
-    print("Paired submissions not found.")
+    print("Paired submission files not found")
 
 # ----------------------------
 # Save leaderboard
 # ----------------------------
 leaderboard = pd.DataFrame(scores)
 
-if not leaderboard.empty and truth is not None:
-    leaderboard = leaderboard.sort_values(by="final_score", ascending=False)
+if not leaderboard.empty:
+    leaderboard = leaderboard.sort_values(by="f1_perturbed", ascending=False)
+else:
+    leaderboard = pd.DataFrame(columns=[
+        "rank", "participant", "f1_ideal",
+        "f1_perturbed", "robustness_gap", "timestamp"
+    ])
 
 leaderboard.to_csv(LEADERBOARD_FILE, index=False)
-print(f"Leaderboard saved to {LEADERBOARD_FILE}")
+print("Leaderboard updated")
 
 # ----------------------------
 # Save JSON for workflow
@@ -163,178 +156,4 @@ print(f"Leaderboard saved to {LEADERBOARD_FILE}")
 with open(SCORES_JSON_FILE, "w") as f:
     json.dump(scores, f, indent=2)
 
-print(f"Scores saved to {SCORES_JSON_FILE}")
-import os
-import sys
-import pandas as pd
-from sklearn.metrics import f1_score
-import base64
-import io
-import json
-
-# ----------------------------
-# Constants
-# ----------------------------
-PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
-SUBMISSIONS_FOLDER = "submissions"
-LEADERBOARD_FILE = "leaderboard.csv"
-SCORES_JSON_FILE = "scores.json"  # <-- new
-
-print("Running scoring_script.py from:", sys.argv[0])
-
-# ----------------------------
-# Load private labels (BASE64)
-# ----------------------------
-truth = None
-labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
-
-if not labels_b64:
-    print(
-        "INFO: Private labels unavailable.\n"
-        "Scoring skipped (EXPECTED for PRs/forks).\n"
-        "Scoring runs only on push to main or manual workflow trigger."
-    )
-else:
-    try:
-        decoded = base64.b64decode(labels_b64)
-        truth = pd.read_csv(io.BytesIO(decoded))
-        truth.columns = truth.columns.str.strip().str.lower()
-        print("Loaded private labels from TEST_LABELS_B64")
-    except Exception as e:
-        print(f"ERROR: Failed to decode TEST_LABELS_B64: {e}")
-        truth = None
-
-# ----------------------------
-# Detect truth column
-# ----------------------------
-truth_col = None
-if truth is not None:
-    if "label" in truth.columns:
-        truth_col = "label"
-    elif "target" in truth.columns:
-        truth_col = "target"
-    else:
-        print("ERROR: Private labels must contain 'label' or 'target'.")
-        truth = None
-
-# ----------------------------
-# Evaluate submissions
-# ----------------------------
-scores = []
-
-if not os.path.exists(SUBMISSIONS_FOLDER):
-    print(f"No submissions folder found: {SUBMISSIONS_FOLDER}")
-else:
-    for fname in sorted(os.listdir(SUBMISSIONS_FOLDER)):
-        if not fname.endswith(".csv"):
-            continue
-
-        submission_path = os.path.join(SUBMISSIONS_FOLDER, fname)
-        submission = pd.read_csv(submission_path)
-        submission.columns = submission.columns.str.strip().str.lower()
-
-        print(f"\nProcessing submission: {fname}")
-        print(f"Submission rows: {len(submission)}")
-
-        # Detect prediction column
-        if "label" in submission.columns:
-            submission_col = "label"
-        elif "target" in submission.columns:
-            submission_col = "target"
-        else:
-            print(f"Skipping {fname}: missing 'label' or 'target'")
-            continue
-
-        # ----------------------------
-        # Organiser scoring
-        # ----------------------------
-        if truth is not None:
-            # Detect ID column
-            if "graph_index" in truth.columns and "graph_index" in submission.columns:
-                id_col = "graph_index"
-            elif "id" in truth.columns and "id" in submission.columns:
-                id_col = "id"
-            else:
-                print(f"Skipping {fname}: missing ID column")
-                continue
-
-            # Force numeric ID dtype
-            truth[id_col] = pd.to_numeric(truth[id_col], errors="coerce")
-            submission[id_col] = pd.to_numeric(submission[id_col], errors="coerce")
-
-            # Drop invalid IDs
-            truth_clean = truth.dropna(subset=[id_col]).copy()
-            submission_clean = submission.dropna(subset=[id_col]).copy()
-
-            # Convert to int (safe after dropna)
-            truth_clean[id_col] = truth_clean[id_col].astype(int)
-            submission_clean[id_col] = submission_clean[id_col].astype(int)
-
-            print("ID dtype (truth):", truth_clean[id_col].dtype)
-            print("ID dtype (submission):", submission_clean[id_col].dtype)
-
-            # Merge truth and submission with suffixes
-            merged = truth_clean.merge(
-                submission_clean,
-                on=id_col,
-                suffixes=("_true", "_pred"),
-                how="inner"
-            )
-
-            print(f"Truth rows: {len(truth_clean)} | Merged rows: {len(merged)}")
-
-            if merged.empty:
-                print(f"Skipping {fname}: no matching IDs")
-                continue
-
-            # ----------------------------
-            # Robust column selection
-            # ----------------------------
-            merged_cols = merged.columns.tolist()
-            y_true_col = f"{truth_col}_true" if f"{truth_col}_true" in merged_cols else truth_col
-            y_pred_col = f"{submission_col}_pred" if f"{submission_col}_pred" in merged_cols else submission_col
-
-            # Compute F1 score
-            score = f1_score(
-                merged[y_true_col],
-                merged[y_pred_col],
-                average="macro"
-            )
-
-            print(f"{fname} -> F1 (macro): {score:.4f}")
-
-            scores.append({
-                "submission": fname,
-                "f1_score": round(score, 6)
-            })
-
-        # ----------------------------
-        # Participant / fork mode
-        # ----------------------------
-        else:
-            print(f"Found submission (scoring skipped): {fname}")
-            scores.append({
-                "submission": fname,
-                "f1_score": None
-            })
-
-# ----------------------------
-# Save leaderboard CSV
-# ----------------------------
-leaderboard = pd.DataFrame(scores)
-
-if not leaderboard.empty and truth is not None:
-    leaderboard = leaderboard.sort_values(by="f1_score", ascending=False)
-
-leaderboard.to_csv(LEADERBOARD_FILE, index=False)
-print(f"Leaderboard saved to {LEADERBOARD_FILE}")
-
-# ----------------------------
-# Save scores JSON for leaderboard step
-# ----------------------------
-try:
-    with open(SCORES_JSON_FILE, "w") as f:
-        json.dump(scores, f, indent=2)
-    print(f"Scores saved to {SCORES_JSON_FILE} for leaderboard update")
-except Exception as e:
-    print(f"ERROR: Failed to save {SCORES_JSON_FILE}: {e}")
+print("Scores JSON saved")
