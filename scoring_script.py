@@ -19,6 +19,16 @@ IDEAL_FILE = "ideal_submission.csv"
 PERTURBED_FILE = "perturbed_submission.csv"
 
 print("Running scoring_script.py from:", sys.argv[0])
+print("Working directory:", os.getcwd())
+
+# ----------------------------
+# Ensure submissions folder exists
+# ----------------------------
+if not os.path.exists(SUBMISSIONS_FOLDER):
+    print(f"Submissions folder not found: {SUBMISSIONS_FOLDER}")
+    os.makedirs(SUBMISSIONS_FOLDER, exist_ok=True)
+
+print("Files inside submissions/:", os.listdir(SUBMISSIONS_FOLDER))
 
 # ----------------------------
 # Load private labels
@@ -27,7 +37,7 @@ truth = None
 labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
 
 if not labels_b64:
-    print("INFO: Private labels unavailable. Scoring skipped.")
+    print("INFO: Private labels unavailable. Scoring skipped (PR-safe mode).")
 else:
     decoded = base64.b64decode(labels_b64)
     truth = pd.read_csv(io.BytesIO(decoded))
@@ -51,6 +61,8 @@ if truth is not None:
 # Helper function to compute F1
 # ----------------------------
 def compute_f1(submission_path):
+    print("Reading:", submission_path)
+
     submission = pd.read_csv(submission_path)
     submission.columns = submission.columns.str.strip().str.lower()
 
@@ -83,6 +95,8 @@ def compute_f1(submission_path):
         how="inner"
     )
 
+    print("Merged rows:", len(merged))
+
     if merged.empty:
         print(f"Skipping {submission_path}: no matching IDs")
         return None
@@ -93,7 +107,7 @@ def compute_f1(submission_path):
     return f1_score(y_true, y_pred, average="macro")
 
 # ----------------------------
-# Evaluate ideal & perturbed
+# Evaluate ideal & perturbed ONLY
 # ----------------------------
 scores = []
 
@@ -102,6 +116,10 @@ perturbed_path = os.path.join(SUBMISSIONS_FOLDER, PERTURBED_FILE)
 
 participant_name = os.getenv("GITHUB_ACTOR", "unknown")
 timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+
+print("Looking for required files:")
+print("Ideal:", ideal_path, os.path.exists(ideal_path))
+print("Perturbed:", perturbed_path, os.path.exists(perturbed_path))
 
 if truth is not None and os.path.exists(ideal_path) and os.path.exists(perturbed_path):
 
@@ -128,17 +146,18 @@ if truth is not None and os.path.exists(ideal_path) and os.path.exists(perturbed
         print(f"Robustness Gap: {gap:.4f}")
 
 else:
-    print("Ideal or perturbed submission missing OR labels unavailable.")
+    print("Required submission files missing OR labels unavailable.")
+    print("Scoring skipped safely.")
 
 # ----------------------------
-# Save leaderboard CSV (for debugging)
+# Save leaderboard CSV
 # ----------------------------
 leaderboard = pd.DataFrame(scores)
 leaderboard.to_csv(LEADERBOARD_FILE, index=False)
 print(f"Leaderboard saved to {LEADERBOARD_FILE}")
 
 # ----------------------------
-# Save scores.json (used by workflow)
+# Save scores.json
 # ----------------------------
 with open(SCORES_JSON_FILE, "w") as f:
     json.dump(scores, f, indent=2)
