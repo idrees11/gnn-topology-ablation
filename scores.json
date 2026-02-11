@@ -1,0 +1,18 @@
+[
+  {
+    "submission": "ideal_submission.csv",
+    "f1_score": null
+  },
+  {
+    "submission": "perturbed_submission.csv",
+    "f1_score": null
+  },
+  {
+    "submission": "sample_sub.csv",
+    "f1_score": null
+  },
+  {
+    "submission": "sample_submission.csv",
+    "f1_score": null
+  }
+]
