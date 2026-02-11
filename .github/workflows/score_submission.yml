@@ -28,7 +28,7 @@ jobs:
       - name: Checkout organiser repository
         uses: actions/checkout@v3
 
-      # ✅ NEW: Checkout PR fork content
+      # ✅ Checkout PR fork content
       - name: Checkout PR repository
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         uses: actions/checkout@v3
@@ -37,7 +37,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           path: pr_repo
 
-      # ✅ NEW: Copy submissions from participant fork
+      # ✅ Copy submissions from participant fork
       - name: Copy participant submissions
         if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
         run: |
@@ -75,10 +75,11 @@ jobs:
           name: scores-json
           path: scores.json
 
+      # ✅ FIXED: run leaderboard WITHOUT --scores argument
       - name: Update leaderboard locally
         run: |
           if [ -f scores.json ]; then
-            python leaderboard/leaderboard_system.py --scores scores.json
+            python leaderboard/leaderboard_system.py
           fi
 
       - name: Upload leaderboard artifact
