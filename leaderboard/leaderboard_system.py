@@ -7,7 +7,11 @@ import pandas as pd
 from datetime import datetime
 from sklearn.metrics import f1_score
 import argparse
+import json
 
+# ----------------------------
+# Constants
+# ----------------------------
 SUBMISSIONS_DIR = "submissions"
 LEADERBOARD_DIR = "leaderboard"
 LEADERBOARD_FILE = os.path.join(LEADERBOARD_DIR, "leaderboard.md")
@@ -15,74 +19,50 @@ LEADERBOARD_FILE = os.path.join(LEADERBOARD_DIR, "leaderboard.md")
 os.makedirs(LEADERBOARD_DIR, exist_ok=True)
 os.makedirs(SUBMISSIONS_DIR, exist_ok=True)
 
-
 # ----------------------------
-# Load private labels (organiser only)
+# Load private labels
 # ----------------------------
 def load_private_labels():
     labels_b64 = os.getenv("TEST_LABELS_B64")
     if not labels_b64:
         print("INFO: TEST_LABELS_B64 secret not found. Scores will be N/A.")
         return None
-
-    decoded_csv = base64.b64decode(labels_b64).decode("utf-8")
-    truth = pd.read_csv(io.StringIO(decoded_csv))
-    truth.columns = truth.columns.str.strip().str.lower()
-
-    if "target" not in truth.columns:
-        truth["target"] = truth["label"]
-
-    return truth
-
+    try:
+        decoded_csv = base64.b64decode(labels_b64).decode("utf-8")
+        truth = pd.read_csv(io.StringIO(decoded_csv))
+        truth.columns = truth.columns.str.strip()
+        if "target" not in truth.columns:
+            if "label" in truth.columns:
+                truth["target"] = truth["label"]
+            else:
+                raise ValueError("Private labels CSV must contain 'label' or 'target'")
+        return truth
+    except Exception as e:
+        print(f"ERROR decoding TEST_LABELS_B64: {e}")
+        return None
 
 # ----------------------------
-# Score a submission
+# Score helper
 # ----------------------------
 def score_submission(sub_path, truth):
-    df = pd.read_csv(sub_path)
-    df.columns = df.columns.str.strip().str.lower()
-
+    df = pd.read_csv(sub_path, sep=None, engine="python")
+    df.columns = df.columns.str.strip()
     pred_col = "label" if "label" in df.columns else "target"
 
-    # Align length safely
     min_len = min(len(df), len(truth))
     y_true = truth["target"].iloc[:min_len]
     y_pred = df[pred_col].iloc[:min_len]
 
     return round(f1_score(y_true, y_pred, average="macro"), 4)
 
-
 # ----------------------------
-# Detect paired submissions
-# ----------------------------
-def group_submissions(files):
-    participants = {}
-
-    for file in files:
-        if not file.endswith(".csv"):
-            continue
-
-        name = file.replace(".csv", "")
-
-        if "ideal" in name:
-            participant = name.replace("_ideal", "").replace("ideal_", "")
-            participants.setdefault(participant, {})["ideal"] = file
-
-        elif "perturbed" in name:
-            participant = name.replace("_perturbed", "").replace("perturbed_", "")
-            participants.setdefault(participant, {})["perturbed"] = file
-
-    return participants
-
-
-# ----------------------------
-# Write leaderboard
+# Write leaderboard (NEW FORMAT)
 # ----------------------------
 def write_leaderboard(entries):
     with open(LEADERBOARD_FILE, "w") as f:
         f.write("# 🏆 GNN Robustness Challenge Leaderboard\n\n")
         f.write("| Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |\n")
-        f.write("|------|------------|---------|--------------|----------------|-----------|\n")
+        f.write("|------|------------|----------|--------------|----------------|-----------|\n")
 
         if not entries:
             f.write("| - | - | - | - | - | - |\n")
@@ -90,74 +70,75 @@ def write_leaderboard(entries):
 
         entries_sorted = sorted(
             entries,
-            key=lambda x: x["f1_perturbed"] if isinstance(x["f1_perturbed"], float) else -1,
+            key=lambda x: float(x["f1_perturbed"]) if isinstance(x["f1_perturbed"], (int, float)) else -1,
             reverse=True
         )
 
         for i, e in enumerate(entries_sorted, start=1):
             f.write(
                 f"| {i} | {e['participant']} | {e['f1_ideal']} | "
-                f"{e['f1_perturbed']} | {e['gap']} | {e['timestamp']} |\n"
+                f"{e['f1_perturbed']} | {e['robustness_gap']} | {e['timestamp']} |\n"
             )
 
     print(f"Leaderboard updated → {LEADERBOARD_FILE}")
 
-
 # ----------------------------
-# Main update logic
+# Main
 # ----------------------------
-def update_leaderboard():
-    entries = []
+def update_leaderboard(scores_file=None):
+    leaderboard = []
 
-    truth = load_private_labels()
-    files = os.listdir(SUBMISSIONS_DIR)
-    grouped = group_submissions(files)
+    # ----------------------------
+    # PR-safe JSON mode (from scoring_script)
+    # ----------------------------
+    if scores_file and os.path.exists(scores_file):
+        with open(scores_file, "r") as f:
+            scores = json.load(f)
 
-    github_user = os.getenv("GITHUB_ACTOR", "participant")
+        for s in scores:
+            leaderboard.append({
+                "participant": s.get("participant", "unknown"),
+                "f1_ideal": s.get("f1_ideal", "N/A"),
+                "f1_perturbed": s.get("f1_perturbed", "N/A"),
+                "robustness_gap": s.get("robustness_gap", "N/A"),
+                "timestamp": s.get("timestamp", datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"))
+            })
 
-    for participant, subs in grouped.items():
+    # ----------------------------
+    # Direct scoring mode (fallback)
+    # ----------------------------
+    else:
+        truth = load_private_labels()
 
-        # If filename had no name → use GitHub username
-        if participant == "":
-            participant = github_user
+        ideal_path = os.path.join(SUBMISSIONS_DIR, "ideal_submission.csv")
+        perturbed_path = os.path.join(SUBMISSIONS_DIR, "perturbed_submission.csv")
 
-        ideal_score = "N/A"
-        pert_score = "N/A"
-        gap = "N/A"
+        if truth is not None and os.path.exists(ideal_path) and os.path.exists(perturbed_path):
+            f1_ideal = score_submission(ideal_path, truth)
+            f1_perturbed = score_submission(perturbed_path, truth)
+            gap = round(f1_ideal - f1_perturbed, 4)
 
-        if truth is not None:
-            try:
-                if "ideal" in subs:
-                    ideal_score = score_submission(
-                        os.path.join(SUBMISSIONS_DIR, subs["ideal"]), truth
-                    )
+            leaderboard.append({
+                "participant": "local",
+                "f1_ideal": f1_ideal,
+                "f1_perturbed": f1_perturbed,
+                "robustness_gap": gap,
+                "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+            })
 
-                if "perturbed" in subs:
-                    pert_score = score_submission(
-                        os.path.join(SUBMISSIONS_DIR, subs["perturbed"]), truth
-                    )
-
-                if isinstance(ideal_score, float) and isinstance(pert_score, float):
-                    gap = round(ideal_score - pert_score, 4)
-
-            except Exception as e:
-                print(f"Error scoring {participant}: {e}")
-
-        entries.append({
-            "participant": participant,
-            "f1_ideal": ideal_score,
-            "f1_perturbed": pert_score,
-            "gap": gap,
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
-        })
-
-    write_leaderboard(entries)
-
+    write_leaderboard(leaderboard)
 
 # ----------------------------
 # CLI
 # ----------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.parse_args()
-    update_leaderboard()
+    parser.add_argument(
+        "--scores",
+        type=str,
+        default=None,
+        help="Optional path to scores.json to update leaderboard PR-safe"
+    )
+    args = parser.parse_args()
+
+    update_leaderboard(scores_file=args.scores)
