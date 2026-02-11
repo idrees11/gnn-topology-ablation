@@ -7,7 +7,6 @@ import pandas as pd
 from datetime import datetime
 from sklearn.metrics import f1_score
 import argparse
-import json
 
 SUBMISSIONS_DIR = "submissions"
 LEADERBOARD_DIR = "leaderboard"
@@ -18,18 +17,21 @@ os.makedirs(SUBMISSIONS_DIR, exist_ok=True)
 
 
 # ----------------------------
-# Load private labels
+# Load private labels (organiser only)
 # ----------------------------
 def load_private_labels():
     labels_b64 = os.getenv("TEST_LABELS_B64")
     if not labels_b64:
         print("INFO: TEST_LABELS_B64 secret not found. Scores will be N/A.")
         return None
+
     decoded_csv = base64.b64decode(labels_b64).decode("utf-8")
     truth = pd.read_csv(io.StringIO(decoded_csv))
-    truth.columns = truth.columns.str.strip()
+    truth.columns = truth.columns.str.strip().str.lower()
+
     if "target" not in truth.columns:
         truth["target"] = truth["label"]
+
     return truth
 
 
@@ -37,10 +39,12 @@ def load_private_labels():
 # Score a submission
 # ----------------------------
 def score_submission(sub_path, truth):
-    df = pd.read_csv(sub_path, sep=None, engine="python")
-    df.columns = df.columns.str.strip()
+    df = pd.read_csv(sub_path)
+    df.columns = df.columns.str.strip().str.lower()
+
     pred_col = "label" if "label" in df.columns else "target"
 
+    # Align length safely
     min_len = min(len(df), len(truth))
     y_true = truth["target"].iloc[:min_len]
     y_pred = df[pred_col].iloc[:min_len]
@@ -49,35 +53,7 @@ def score_submission(sub_path, truth):
 
 
 # ----------------------------
-# Write leaderboard
-# ----------------------------
-def write_leaderboard(entries):
-    with open(LEADERBOARD_FILE, "w") as f:
-        f.write("# 🏆 GNN Robustness Challenge Leaderboard\n\n")
-        f.write("| Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |\n")
-        f.write("|------|------------|---------|--------------|----------------|-----------|\n")
-
-        if not entries:
-            f.write("| - | - | - | - | - | - |\n")
-            return
-
-        entries_sorted = sorted(
-            entries,
-            key=lambda x: float(x["f1_perturbed"]) if isinstance(x["f1_perturbed"], (int, float)) else -1,
-            reverse=True
-        )
-
-        for i, e in enumerate(entries_sorted, start=1):
-            f.write(
-                f"| {i} | {e['participant']} | {e['f1_ideal']} | "
-                f"{e['f1_perturbed']} | {e['gap']} | {e['timestamp']} |\n"
-            )
-
-    print(f"Leaderboard updated → {LEADERBOARD_FILE}")
-
-
-# ----------------------------
-# Merge ideal + perturbed
+# Detect paired submissions
 # ----------------------------
 def group_submissions(files):
     participants = {}
@@ -100,16 +76,50 @@ def group_submissions(files):
 
 
 # ----------------------------
+# Write leaderboard
+# ----------------------------
+def write_leaderboard(entries):
+    with open(LEADERBOARD_FILE, "w") as f:
+        f.write("# 🏆 GNN Robustness Challenge Leaderboard\n\n")
+        f.write("| Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |\n")
+        f.write("|------|------------|---------|--------------|----------------|-----------|\n")
+
+        if not entries:
+            f.write("| - | - | - | - | - | - |\n")
+            return
+
+        entries_sorted = sorted(
+            entries,
+            key=lambda x: x["f1_perturbed"] if isinstance(x["f1_perturbed"], float) else -1,
+            reverse=True
+        )
+
+        for i, e in enumerate(entries_sorted, start=1):
+            f.write(
+                f"| {i} | {e['participant']} | {e['f1_ideal']} | "
+                f"{e['f1_perturbed']} | {e['gap']} | {e['timestamp']} |\n"
+            )
+
+    print(f"Leaderboard updated → {LEADERBOARD_FILE}")
+
+
+# ----------------------------
 # Main update logic
 # ----------------------------
-def update_leaderboard(scores_file=None):
+def update_leaderboard():
     entries = []
 
     truth = load_private_labels()
     files = os.listdir(SUBMISSIONS_DIR)
     grouped = group_submissions(files)
 
+    github_user = os.getenv("GITHUB_ACTOR", "participant")
+
     for participant, subs in grouped.items():
+
+        # If filename had no name → use GitHub username
+        if participant == "":
+            participant = github_user
 
         ideal_score = "N/A"
         pert_score = "N/A"
@@ -149,6 +159,5 @@ def update_leaderboard(scores_file=None):
 # ----------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scores", type=str, default=None)
-    args = parser.parse_args()
-    update_leaderboard(scores_file=args.scores)
+    parser.parse_args()
+    update_leaderboard()
