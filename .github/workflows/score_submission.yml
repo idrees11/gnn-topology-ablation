@@ -31,7 +31,7 @@ jobs:
           ref: main
 
       # -------------------------------------------------
-      # STEP 2: Fetch participant PR
+      # STEP 2: Fetch participant PR branch
       # -------------------------------------------------
       - name: Fetch participant PR
         run: |
@@ -45,30 +45,22 @@ jobs:
           ls -R
 
       # -------------------------------------------------
-      # STEP 3: Locate and copy submissions
+      # STEP 3: Locate submissions folder dynamically
       # -------------------------------------------------
       - name: Locate submissions folder
         run: |
-          # Search recursively for submissions folder
           SUB_DIR=$(find . -type d -name submissions | head -n 1)
 
           if [ -z "$SUB_DIR" ]; then
-            echo "❌ No submissions folder found in PR"
+            echo "❌ submissions folder not found"
             exit 1
           fi
 
           echo "Found submissions folder at: $SUB_DIR"
           ls -l "$SUB_DIR"
 
-          # Copy files to runner submissions/ folder
-          mkdir -p submissions
-          cp -v "$SUB_DIR"/* submissions/ || true
-
-          echo "Final submissions used for scoring:"
-          ls -l submissions
-
       # -------------------------------------------------
-      # STEP 4: Setup Python environment
+      # STEP 4: Setup Python
       # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -79,7 +71,7 @@ jobs:
         run: pip install pandas scikit-learn
 
       # -------------------------------------------------
-      # STEP 5: Decode private labels secret
+      # STEP 5: Decode private labels
       # -------------------------------------------------
       - name: Decode private labels
         env:
@@ -89,12 +81,16 @@ jobs:
           echo "Private labels loaded"
 
       # -------------------------------------------------
-      # STEP 6: Run scoring for both submissions
+      # STEP 6: Run scoring using dynamic submissions path
       # -------------------------------------------------
       - name: Run scoring
         run: |
-          python scoring_script.py test_labels.csv submissions/ideal_submission.csv
-          python scoring_script.py test_labels.csv submissions/perturbed_submission.csv
+          SUB_DIR=$(find . -type d -name submissions | head -n 1)
+          echo "Using submissions folder: $SUB_DIR"
+          ls -l "$SUB_DIR"
+
+          python scoring_script.py test_labels.csv "$SUB_DIR/ideal_submission.csv"
+          python scoring_script.py test_labels.csv "$SUB_DIR/perturbed_submission.csv"
 
       # -------------------------------------------------
       # STEP 7: Update leaderboard
