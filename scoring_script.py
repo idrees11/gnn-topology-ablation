@@ -13,7 +13,11 @@ SCORES_JSON_FILE = "scores.json"
 EXPECTED_FILES = ["ideal_submission.csv", "perturbed_submission.csv"]
 
 print("Running scoring_script.py...")
+print("Files in submissions:", os.listdir(SUBMISSIONS_FOLDER) if os.path.exists(SUBMISSIONS_FOLDER) else "No folder")
 
+# -------------------------------------------------
+# Load private labels from GitHub Secret
+# -------------------------------------------------
 truth = None
 labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
 
@@ -25,10 +29,15 @@ if labels_b64:
 else:
     print("Private labels unavailable. Scoring skipped.")
 
-truth_col = "label" if "label" in truth.columns else "target"
+truth_col = None
+if truth is not None:
+    truth_col = "label" if "label" in truth.columns else "target"
 
 scores = []
 
+# -------------------------------------------------
+# Evaluate required submissions
+# -------------------------------------------------
 for fname in EXPECTED_FILES:
     path = os.path.join(SUBMISSIONS_FOLDER, fname)
 
@@ -45,6 +54,11 @@ for fname in EXPECTED_FILES:
 
     merged = truth.merge(sub, on=id_col, suffixes=("_true", "_pred"))
 
+    if merged.empty:
+        print(f"❌ No matching IDs for {fname}")
+        scores.append({"submission": fname, "f1_score": None})
+        continue
+
     score = f1_score(
         merged[f"{truth_col}_true"],
         merged[f"{pred_col}_pred"],
@@ -54,6 +68,9 @@ for fname in EXPECTED_FILES:
     print(f"{fname} → F1: {score:.4f}")
     scores.append({"submission": fname, "f1_score": float(score)})
 
+# -------------------------------------------------
+# Save outputs
+# -------------------------------------------------
 pd.DataFrame(scores).to_csv(LEADERBOARD_FILE, index=False)
 
 with open(SCORES_JSON_FILE, "w") as f:
