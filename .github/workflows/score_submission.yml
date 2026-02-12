@@ -82,11 +82,18 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # ✅ STEP 5: Run organizer scoring script (secret handled internally)
+      # ✅ STEP 5: Run organizer scoring script (encode CSV secret properly)
       - name: Run scoring
         env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
+          TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
         run: |
+          # Encode raw CSV secret as proper base64
+          export TEST_LABELS_B64=$(echo "$TEST_LABELS_RAW" | base64 | tr -d '\n')
+
+          # Debug message (secret not printed; GitHub masks it)
+          echo "Encoded TEST_LABELS_B64 ready for scoring script"
+
+          # Run the scoring script
           python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
 
       # ✅ STEP 6: Update leaderboard
