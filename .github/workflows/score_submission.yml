@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to score (required if manual dispatch)"
-        required: false
+        description: "PR number to score"
+        required: true
 
 concurrency:
   group: leaderboard-update
@@ -50,14 +50,13 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
-
-      # Step 1: Checkout main
+      # Step 1: Checkout organiser main
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # Step 2: Checkout participant PR (from fork, if PR-triggered)
+      # Step 2: Checkout participant PR (from fork)
       - name: Checkout participant PR
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
@@ -71,9 +70,9 @@ jobs:
         run: |
           mkdir -p submissions
           if [ -d "participant_repo/submissions" ]; then
-            cp -r participant_repo/submissions/* submissions/ || echo "No submission files"
+            cp -r participant_repo/submissions/* submissions/
           else
-            echo "No participant_repo/submissions folder found"
+            echo "No submission files found"
           fi
 
       # Step 4: Show submissions
@@ -88,28 +87,32 @@ jobs:
 
       # Step 6: Install dependencies
       - name: Install dependencies
-        run: pip install pandas scikit-learn gh
+        run: pip install pandas scikit-learn
 
       # Step 7: Set participant name
       - name: Set participant name
         id: participant
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            # PR-triggered: use PR author login
+            # PR triggered: take author directly
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            # Manual dispatch: fetch PR author if PR number provided
-            if [ -n "${{ github.event.inputs.pr_number }}" ]; then
-              AUTHOR=$(gh pr view ${{ github.event.inputs.pr_number }} --json author --jq '.author.login')
-              echo "participant_name=$AUTHOR" >> $GITHUB_OUTPUT
+            PR_NUMBER="${{ github.event.inputs.pr_number }}"
+            if [ -n "$PR_NUMBER" ]; then
+              AUTHOR=$(gh pr view "$PR_NUMBER" --repo "${GITHUB_REPOSITORY}" --json author --jq '.author.login')
+              if [ -n "$AUTHOR" ]; then
+                echo "participant_name=$AUTHOR" >> $GITHUB_OUTPUT
+              else
+                echo "participant_name=unknown" >> $GITHUB_OUTPUT
+              fi
             else
               echo "participant_name=unknown" >> $GITHUB_OUTPUT
             fi
           else
             echo "participant_name=unknown" >> $GITHUB_OUTPUT
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Step 8: Run scoring
       - name: Run scoring
