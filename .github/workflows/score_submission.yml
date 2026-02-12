@@ -31,7 +31,8 @@ jobs:
           ref: main
 
       # -------------------------------------------------
-      # STEP 2: Fetch PR HEAD correctly (CRITICAL FIX)
+      # STEP 2: Fetch participant PR content
+      # Works for forks (your GitHub challenge setup)
       # -------------------------------------------------
       - name: Fetch participant PR
         run: |
@@ -41,22 +42,25 @@ jobs:
           git fetch origin pull/$PR_NUMBER/head:participant_branch
           git checkout participant_branch
 
-          echo "PR repo content:"
+          echo "PR content:"
           ls -R
 
       # -------------------------------------------------
-      # STEP 3: Copy submissions from PR
+      # STEP 3: Validate submissions exist
       # -------------------------------------------------
-      - name: Copy submissions
+      - name: Validate submission files
         run: |
-          mkdir -p submissions
-
-          if [ ! -d "submissions" ]; then
-            echo "❌ submissions folder not found in PR"
+          if [ ! -f "submissions/ideal_submission.csv" ]; then
+            echo "❌ ideal_submission.csv missing"
             exit 1
           fi
 
-          echo "Submission files:"
+          if [ ! -f "submissions/perturbed_submission.csv" ]; then
+            echo "❌ perturbed_submission.csv missing"
+            exit 1
+          fi
+
+          echo "Submission files found:"
           ls -l submissions
 
       # -------------------------------------------------
@@ -71,21 +75,31 @@ jobs:
         run: pip install pandas scikit-learn
 
       # -------------------------------------------------
-      # STEP 5: Run scoring (SECRET FIXED)
+      # STEP 5: Decode private labels (your secret)
       # -------------------------------------------------
-      - name: Run scoring
+      - name: Decode private labels
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-        run: python scoring_script.py
+        run: |
+          echo "$TEST_LABELS_B64" | base64 -d > test_labels.csv
+          echo "Private labels loaded"
 
       # -------------------------------------------------
-      # STEP 6: Update leaderboard
+      # STEP 6: Run scoring (your script interface)
+      # -------------------------------------------------
+      - name: Run scoring
+        run: |
+          python scoring_script.py test_labels.csv submissions/ideal_submission.csv
+          python scoring_script.py test_labels.csv submissions/perturbed_submission.csv
+
+      # -------------------------------------------------
+      # STEP 7: Update leaderboard
       # -------------------------------------------------
       - name: Update leaderboard
         run: python leaderboard/leaderboard_system.py --scores scores.json
 
       # -------------------------------------------------
-      # STEP 7: Commit leaderboard
+      # STEP 8: Commit leaderboard
       # -------------------------------------------------
       - name: Commit leaderboard
         run: |
@@ -93,5 +107,5 @@ jobs:
           git config --global user.email "bot@github.com"
 
           git add leaderboard/leaderboard.md scores.json || true
-          git commit -m "Update leaderboard" || true
+          git commit -m "Update leaderboard from PR" || true
           git push
