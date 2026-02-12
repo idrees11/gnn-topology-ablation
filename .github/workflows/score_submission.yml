@@ -93,6 +93,7 @@ jobs:
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=local" >> $GITHUB_OUTPUT
+          fi
 
       # Step 8: Run scoring
       - name: Run scoring
