@@ -2,8 +2,7 @@ name: Score Submissions
 
 on:
   pull_request:
-    branches: [main]
-
+    branches: [main]   # Trigger on PRs to main
   workflow_dispatch:
     inputs:
       pr_number:
@@ -47,9 +46,10 @@ jobs:
   # ✅ Organizer scoring
   # -------------------------------------------------
   scoring:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
+
       # Step 1: Checkout organiser main
       - name: Checkout organiser main
         uses: actions/checkout@v4
@@ -84,17 +84,25 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # Step 7: Set participant name
+      # Step 7: Install GitHub CLI
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt update
+          sudo apt install gh -y
+
+      # Step 8: Get PR author name
       - name: Set participant name
         id: participant
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.user.login }}" ]; then
-            echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
-          else
-            echo "participant_name=unknown" >> $GITHUB_OUTPUT
-          fi
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          AUTHOR=$(gh pr view $PR_NUMBER --json author --jq '.author.login')
+          echo "participant_name=$AUTHOR" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 8: Run scoring
+      # Step 9: Run scoring
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
@@ -106,16 +114,15 @@ jobs:
             --save-scores scores.json \
             --participant "${{ steps.participant.outputs.participant_name }}"
 
-      # Step 9: Update leaderboard
+      # Step 10: Update leaderboard
       - name: Update leaderboard
         run: |
           if [ -f scores.json ]; then
             python leaderboard/leaderboard_system.py --scores scores.json
           else
             echo "No scores.json found, skipping leaderboard update"
-          fi
 
-      # Step 10: Upload leaderboard artifact
+      # Step 11: Upload leaderboard artifact
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
