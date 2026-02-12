@@ -21,6 +21,9 @@ permissions:
 
 jobs:
 
+  # -------------------------------------------------
+  # ✅ Participant confirmation message
+  # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -34,9 +37,12 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: "✅ Submission received successfully! Organizer will evaluate it soon."
+              body: "✅ Submission received successfully! It will be evaluated automatically."
             });
 
+  # -------------------------------------------------
+  # ✅ Scoring job (PR or Manual)
+  # -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
     if: |
@@ -44,30 +50,59 @@ jobs:
       github.event_name == 'pull_request_target'
 
     steps:
-      # Checkout organiser repository (contains scoring code)
+      # -------------------------------------------------
+      # STEP 1: Checkout organiser repo (contains scoring code)
+      # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # Checkout PR contents (works for both triggers)
-      - name: Checkout PR submission
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.inputs.pr_number) }}
-          path: participant_repo
+      # -------------------------------------------------
+      # STEP 2: Get PR number
+      # -------------------------------------------------
+      - name: Set PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            echo "PR=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "PR=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Show participant repo
-        run: ls -R participant_repo || echo "participant repo missing"
+      # -------------------------------------------------
+      # STEP 3: Download PR snapshot (WORKS WITH FORKS)
+      # -------------------------------------------------
+      - name: Download PR contents
+        run: |
+          echo "Downloading PR #${{ steps.pr.outputs.PR }}"
+          curl -L \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -o pr.zip \
+            https://api.github.com/repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.PR }}/head.zip
 
+          unzip pr.zip -d pr_contents
+
+      # -------------------------------------------------
+      # STEP 4: Show downloaded files (debug)
+      # -------------------------------------------------
+      - name: Show PR files
+        run: ls -R pr_contents || echo "No PR files found"
+
+      # -------------------------------------------------
+      # STEP 5: Copy submission files
+      # -------------------------------------------------
       - name: Copy submissions
         run: |
           mkdir -p submissions
-          cp -v participant_repo/submissions/* submissions/ || echo "No submission files"
+          cp -v pr_contents/*/submissions/* submissions/ || echo "No submission files found"
 
       - name: Show scoring files
         run: ls -R submissions || echo "No submissions folder"
 
+      # -------------------------------------------------
+      # STEP 6: Python environment
+      # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -76,6 +111,9 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
+      # -------------------------------------------------
+      # STEP 7: Run scoring
+      # -------------------------------------------------
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -84,12 +122,15 @@ jobs:
       - name: Update leaderboard
         run: python leaderboard/leaderboard_system.py --scores scores.json
 
-      - name: Upload leaderboard
+      - name: Upload leaderboard artifact
         uses: actions/upload-artifact@v4
         with:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
+  # -------------------------------------------------
+  # ✅ Commit leaderboard (manual scoring only)
+  # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
     if: github.event_name == 'workflow_dispatch'
