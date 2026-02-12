@@ -43,34 +43,52 @@ jobs:
   # -------------------------------------------------
   # ✅ Organizer scoring
   # -------------------------------------------------
-  scoring:
+ scoring:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'pull_request_target'
 
     steps:
-      # 🔥 STEP 1: Checkout organiser repo (main branch)
+      # ✅ Checkout organiser repo (contains scoring code)
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # 🔥 STEP 2: Checkout participant PR (AUTO or MANUAL)
-      - name: Checkout participant submission
+      # ✅ Checkout participant PR HEAD (REAL submission files)
+      - name: Checkout participant PR
+        if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
-      # 🔥 STEP 3: Copy only submissions folder
+      # ✅ Checkout participant PR manually (organiser trigger)
+      - name: Checkout participant PR (manual)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+          path: participant_repo
+
+      # 🔍 DEBUG — show what was actually downloaded
+      - name: Show participant repo structure
+        run: |
+          echo "===== PARTICIPANT REPO ====="
+          ls -R participant_repo || echo "participant_repo missing"
+
+      # ✅ Copy submissions safely
       - name: Copy submissions
         run: |
           mkdir -p submissions
-          cp -r participant_repo/submissions/* submissions/ || echo "No submission files"
+          cp -v participant_repo/submissions/* submissions/ || echo "No submission files copied"
 
-      - name: Show submissions
-        run: ls -R submissions || echo "No submissions folder"
+      - name: Show submissions used for scoring
+        run: |
+          echo "===== SCORING INPUT ====="
+          ls -R submissions || echo "No submissions folder"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -80,7 +98,6 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # ✅ RUN ORGANISER SCORING SCRIPT
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -94,7 +111,6 @@ jobs:
         with:
           name: leaderboard
           path: leaderboard/leaderboard.md
-
   # -------------------------------------------------
   # ✅ Commit leaderboard
   # -------------------------------------------------
