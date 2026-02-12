@@ -18,14 +18,27 @@ permissions:
   contents: write
 
 jobs:
+
   # -------------------------------------------------
   # 1. SCORING JOB (PR-safe, NO PUSH)
   # -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      # ✅ CRITICAL: checkout participant PR files OR main branch
+      - name: Checkout PR or main
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+      # ✅ Debug so you can SEE submissions in Actions log
+      - name: Show repository structure
+        run: |
+          echo "Working directory:"
+          pwd
+          echo "Submissions folder:"
+          ls -l submissions || echo "No submissions folder"
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -38,25 +51,21 @@ jobs:
       - name: Ensure submissions folder exists
         run: mkdir -p submissions
 
-      - name: Create dummy submission if empty
-        run: |
-          if [ -z "$(ls -A submissions 2>/dev/null)" ]; then
-            echo "graph_index,label" > submissions/dummy.csv
-            echo "0,0" >> submissions/dummy.csv
-          fi
-
+      # ✅ Run scoring for ideal + perturbed
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
+          python scoring_script.py || echo "Scoring skipped (PR-safe)"
 
+      # ✅ Save scores for leaderboard step
       - name: Upload scores artifact
         uses: actions/upload-artifact@v4
         with:
           name: scores-json
           path: scores.json
 
+      # ✅ Generate leaderboard locally
       - name: Update leaderboard locally
         run: |
           if [ -f scores.json ]; then
@@ -65,6 +74,7 @@ jobs:
             echo "No scores.json found, skipping leaderboard update"
           fi
 
+      # ✅ Save leaderboard for commit job
       - name: Upload leaderboard artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -72,13 +82,15 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
+
   # -------------------------------------------------
-  # 2. COMMIT JOB (push leaderboard to repo)
+  # 2. COMMIT JOB (ONLY organiser events)
   # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v3
@@ -92,9 +104,7 @@ jobs:
           name: leaderboard
           path: leaderboard
 
-      # ✅ No copy step — file already in correct location
-
-      - name: Commit and push leaderboard (race-safe)
+      - name: Commit and push leaderboard
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -102,12 +112,12 @@ jobs:
           git add leaderboard/leaderboard.md
           git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
 
-          # 🔁 Sync with remote to avoid push rejection
           git pull --rebase origin main
           git push
 
+
   # -------------------------------------------------
-  # 3. PR FEEDBACK JOB (FORK-SAFE COMMENT)
+  # 3. PR FEEDBACK JOB (participant confirmation)
   # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
@@ -115,23 +125,28 @@ jobs:
     permissions:
       pull-requests: write
       issues: write
+
     steps:
-      - name: Comment on PR (submission received)
+      - name: Comment on PR
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
 
             const body = `
-            ✅ **Submission received successfully!**
+✅ Submission received successfully!
 
-            🔹 Your submission has been detected.
-            🔹 Basic checks have been completed.
-            🔹 Final evaluation uses private labels and is run by the organisers.
-            🔹 The public leaderboard will be updated after evaluation.
+Your files were detected:
+• ideal_submission.csv
+• perturbed_submission.csv
 
-            Thank you for participating 🚀
-            `;
+What happens next:
+• Organizer scoring runs using private labels
+• Leaderboard updates automatically
+• Check Actions tab for status
+
+Thank you for participating 🚀
+`;
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
