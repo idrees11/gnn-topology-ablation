@@ -82,9 +82,16 @@ jobs:
       # ✅ STEP 5: Run organizer scoring script
       - name: Run scoring
         env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
+          TEST_LABELS_CSV: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          echo "$TEST_LABELS_B64" | base64 -d > test_labels.csv
+          # Write the CSV secret directly to a file
+          echo "$TEST_LABELS_CSV" > test_labels.csv
+
+          # Debug: show the contents
+          echo "Contents of test_labels.csv:"
+          cat test_labels.csv
+
+          # Run the scoring script
           python scoring_script.py test_labels.csv submissions/ideal_submission.csv
 
       # ✅ STEP 6: Update leaderboard
