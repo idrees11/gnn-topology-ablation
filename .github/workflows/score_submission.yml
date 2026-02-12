@@ -21,7 +21,9 @@ permissions:
 
 jobs:
 
-  # ✅ Participant confirmation
+  # -------------------------------------------------
+  # ✅ Participant confirmation message
+  # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -38,29 +40,45 @@ jobs:
               body: "✅ Submission received successfully! Organizer will evaluate it soon."
             });
 
-  # ✅ Organizer scoring job
+  # -------------------------------------------------
+  # ✅ Organizer scoring
+  # -------------------------------------------------
   scoring:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
-      # 🔥 Checkout participant PR branch
-      - name: Checkout PR submission
-        uses: actions/checkout@v3
+      # 🔥 STEP 1: Checkout organiser repo (NEW scoring script)
+      - name: Checkout organiser main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # 🔥 STEP 2: Checkout participant PR into separate folder
+      - name: Checkout participant submission
+        uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+          path: participant_repo
+
+      # 🔥 STEP 3: Copy only submissions folder
+      - name: Copy submissions
+        run: |
+          mkdir -p submissions
+          cp -r participant_repo/submissions/* submissions/ || echo "No submission files"
 
       - name: Show submissions
         run: ls -R submissions || echo "No submissions folder"
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
+      # ✅ RUN ORGANISER SCORING SCRIPT
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -75,14 +93,16 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
+  # -------------------------------------------------
   # ✅ Commit leaderboard
+  # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
