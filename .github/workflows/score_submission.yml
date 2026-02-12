@@ -41,22 +41,26 @@ jobs:
             });
 
   # -------------------------------------------------
-  # ✅ Organizer scoring
+  # ✅ Organizer scoring (PR or Manual)
   # -------------------------------------------------
- scoring:
+  scoring:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'pull_request_target'
 
     steps:
-      # ✅ Checkout organiser repo (contains scoring code)
+      # -------------------------------------------------
+      # STEP 1: Checkout organiser repo (scoring code)
+      # -------------------------------------------------
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # ✅ Checkout participant PR HEAD (REAL submission files)
+      # -------------------------------------------------
+      # STEP 2A: Checkout participant PR (automatic scoring)
+      # -------------------------------------------------
       - name: Checkout participant PR
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
@@ -65,7 +69,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
-      # ✅ Checkout participant PR manually (organiser trigger)
+      # -------------------------------------------------
+      # STEP 2B: Checkout participant PR (manual scoring)
+      # -------------------------------------------------
       - name: Checkout participant PR (manual)
         if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v4
@@ -73,13 +79,17 @@ jobs:
           ref: refs/pull/${{ github.event.inputs.pr_number }}/head
           path: participant_repo
 
-      # 🔍 DEBUG — show what was actually downloaded
+      # -------------------------------------------------
+      # STEP 3: Debug — show downloaded files
+      # -------------------------------------------------
       - name: Show participant repo structure
         run: |
-          echo "===== PARTICIPANT REPO ====="
+          echo "===== PARTICIPANT REPO CONTENT ====="
           ls -R participant_repo || echo "participant_repo missing"
 
-      # ✅ Copy submissions safely
+      # -------------------------------------------------
+      # STEP 4: Copy submission files for scoring
+      # -------------------------------------------------
       - name: Copy submissions
         run: |
           mkdir -p submissions
@@ -87,9 +97,12 @@ jobs:
 
       - name: Show submissions used for scoring
         run: |
-          echo "===== SCORING INPUT ====="
+          echo "===== FILES USED FOR SCORING ====="
           ls -R submissions || echo "No submissions folder"
 
+      # -------------------------------------------------
+      # STEP 5: Python setup
+      # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -98,6 +111,9 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
+      # -------------------------------------------------
+      # STEP 6: Run scoring script
+      # -------------------------------------------------
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -111,12 +127,13 @@ jobs:
         with:
           name: leaderboard
           path: leaderboard/leaderboard.md
+
   # -------------------------------------------------
-  # ✅ Commit leaderboard
+  # ✅ Commit leaderboard (manual scoring only)
   # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
-    if: github.event_name != 'pull_request_target'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
