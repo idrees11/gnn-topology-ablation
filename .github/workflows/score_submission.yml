@@ -3,10 +3,11 @@ name: Score Submissions
 on:
   pull_request_target:
     branches: [main]
+
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to score manually"
+        description: "PR number to score"
         required: true
 
 concurrency:
@@ -16,52 +17,60 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
-  scoring:
-    runs-on: ubuntu-latest
 
+  # -------------------------------------------------
+  # ✅ Participant confirmation message
+  # -------------------------------------------------
+  pr-feedback:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
     steps:
-      # -------------------------------------------------
-      # STEP 1: Checkout organiser repo (scoring code)
-      # -------------------------------------------------
-      - name: Checkout organiser repo
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: "✅ Submission received successfully! Organizer will evaluate it soon."
+            });
+
+  # -------------------------------------------------
+  # ✅ Organizer scoring
+  # -------------------------------------------------
+  scoring:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      # 🔥 STEP 1: Checkout organiser main
+      - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # -------------------------------------------------
-      # STEP 2: Fetch participant PR branch
-      # -------------------------------------------------
-      - name: Fetch participant PR
+      # 🔥 STEP 2: Checkout participant PR from fork
+      - name: Checkout participant PR (from fork)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          path: participant_repo
+
+      # 🔥 STEP 3: Copy submissions folder
+      - name: Copy submissions
         run: |
-          PR_NUMBER=${{ github.event.pull_request.number || github.event.inputs.pr_number }}
-          echo "Fetching PR #$PR_NUMBER"
+          mkdir -p submissions
+          cp -r participant_repo/submissions/* submissions/ || echo "No submission files"
 
-          git fetch origin pull/$PR_NUMBER/head:participant_branch
-          git checkout participant_branch
+      - name: Show submissions
+        run: ls -R submissions || echo "No submissions folder"
 
-          echo "PR repo structure:"
-          ls -R
-
-      # -------------------------------------------------
-      # STEP 3: Locate submissions folder dynamically
-      # -------------------------------------------------
-      - name: Locate submissions folder
-        run: |
-          SUB_DIR=$(find . -type d -name submissions | head -n 1)
-
-          if [ -z "$SUB_DIR" ]; then
-            echo "❌ submissions folder not found"
-            exit 1
-          fi
-
-          echo "Found submissions folder at: $SUB_DIR"
-          ls -l "$SUB_DIR"
-
-      # -------------------------------------------------
-      # STEP 4: Setup Python
-      # -------------------------------------------------
+      # 🔥 STEP 4: Setup Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -70,42 +79,48 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # -------------------------------------------------
-      # STEP 5: Decode private labels
-      # -------------------------------------------------
-      - name: Decode private labels
+      # ✅ STEP 5: Run organizer scoring script
+      - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           echo "$TEST_LABELS_B64" | base64 -d > test_labels.csv
-          echo "Private labels loaded"
+          python scoring_script.py test_labels.csv submissions/ideal_submission.csv
 
-      # -------------------------------------------------
-      # STEP 6: Run scoring using dynamic submissions path
-      # -------------------------------------------------
-      - name: Run scoring
-        run: |
-          SUB_DIR=$(find . -type d -name submissions | head -n 1)
-          echo "Using submissions folder: $SUB_DIR"
-          ls -l "$SUB_DIR"
-
-          python scoring_script.py test_labels.csv "$SUB_DIR/ideal_submission.csv"
-          python scoring_script.py test_labels.csv "$SUB_DIR/perturbed_submission.csv"
-
-      # -------------------------------------------------
-      # STEP 7: Update leaderboard
-      # -------------------------------------------------
+      # ✅ STEP 6: Update leaderboard
       - name: Update leaderboard
         run: python leaderboard/leaderboard_system.py --scores scores.json
 
-      # -------------------------------------------------
-      # STEP 8: Commit leaderboard
-      # -------------------------------------------------
+      # ✅ STEP 7: Upload leaderboard artifact
+      - name: Upload leaderboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: leaderboard
+          path: leaderboard/leaderboard.md
+
+  # -------------------------------------------------
+  # ✅ Commit leaderboard
+  # -------------------------------------------------
+  commit-leaderboard:
+    needs: scoring
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: leaderboard
+          path: leaderboard
+
       - name: Commit leaderboard
         run: |
-          git config --global user.name "leaderboard-bot"
-          git config --global user.email "bot@github.com"
-
-          git add leaderboard/leaderboard.md scores.json || true
-          git commit -m "Update leaderboard from PR" || true
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add leaderboard/leaderboard.md
+          git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
+          git pull --rebase origin main
           git push
