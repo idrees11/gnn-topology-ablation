@@ -1,7 +1,7 @@
 name: Score Submissions
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
 
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
   # ✅ Participant confirmation message
   # -------------------------------------------------
   pr-feedback:
-    if: github.event_name == 'pull_request_target'
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -47,7 +47,7 @@ jobs:
   # ✅ Organizer scoring
   # -------------------------------------------------
   scoring:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout organiser main
@@ -88,7 +88,7 @@ jobs:
       - name: Set participant name
         id: participant
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ] && [ -n "${{ github.event.pull_request.user.login }}" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "${{ github.event.pull_request.user.login }}" ]; then
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=unknown" >> $GITHUB_OUTPUT
