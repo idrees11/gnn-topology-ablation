@@ -4,6 +4,17 @@ from sklearn.metrics import f1_score
 import base64
 import io
 import json
+import argparse
+from datetime import datetime
+
+# ----------------------------
+# CLI
+# ----------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument("--save-scores", type=str, default="scores.json")
+parser.add_argument("--participant", type=str, default="unknown")
+args = parser.parse_args()
+participant_name = args.participant
 
 # ----------------------------
 # Constants
@@ -11,7 +22,7 @@ import json
 PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
-SCORES_JSON_FILE = "scores.json"
+SCORES_JSON_FILE = args.save_scores
 
 EXPECTED_FILES = ["ideal_submission.csv", "perturbed_submission.csv"]
 
@@ -129,17 +140,43 @@ else:
         })
 
 # ----------------------------
-# Save outputs
+# Save leaderboard CSV
 # ----------------------------
-leaderboard = pd.DataFrame(scores)
+leaderboard = []
 
-if not leaderboard.empty and truth is not None:
-    leaderboard = leaderboard.sort_values(by="f1_score", ascending=False)
+timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
-leaderboard.to_csv(LEADERBOARD_FILE, index=False)
+f1_ideal = next((s["f1_score"] for s in scores if s["submission"] == "ideal_submission.csv"), "N/A")
+f1_perturbed = next((s["f1_score"] for s in scores if s["submission"] == "perturbed_submission.csv"), "N/A")
+robustness_gap = round(f1_ideal - f1_perturbed, 6) if isinstance(f1_ideal, float) and isinstance(f1_perturbed, float) else "N/A"
+
+leaderboard.append({
+    "participant": participant_name,
+    "f1_ideal": f1_ideal,
+    "f1_perturbed": f1_perturbed,
+    "robustness_gap": robustness_gap,
+    "timestamp": timestamp
+})
+
+df_leaderboard = pd.DataFrame(leaderboard)
+df_leaderboard.to_csv(LEADERBOARD_FILE, index=False)
 print("Leaderboard saved.")
 
-with open(SCORES_JSON_FILE, "w") as f:
-    json.dump(scores, f, indent=2)
+# ----------------------------
+# Save scores JSON (for leaderboard_system.py)
+# ----------------------------
+scores_json = [
+    {
+        "participant": participant_name,
+        "f1_ideal": f1_ideal,
+        "f1_perturbed": f1_perturbed,
+        "robustness_gap": robustness_gap,
+        "timestamp": timestamp
+    }
+]
 
+with open(SCORES_JSON_FILE, "w") as f:
+    json.dump(scores_json, f, indent=2)
+
+print("Scores JSON saved →", SCORES_JSON_FILE)
 print("Scoring complete.")
