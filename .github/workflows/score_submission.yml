@@ -41,7 +41,7 @@ jobs:
             });
 
   # -------------------------------------------------
-  # ✅ Scoring job (PR or Manual)
+  # ✅ Scoring job
   # -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
 
     steps:
       # -------------------------------------------------
-      # STEP 1: Checkout organiser repo (contains scoring code)
+      # STEP 1: Checkout organiser repo (scoring code)
       # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
@@ -59,7 +59,7 @@ jobs:
           ref: main
 
       # -------------------------------------------------
-      # STEP 2: Get PR number
+      # STEP 2: Determine PR number
       # -------------------------------------------------
       - name: Set PR number
         id: pr
@@ -71,20 +71,20 @@ jobs:
           fi
 
       # -------------------------------------------------
-      # STEP 3: Download PR snapshot (WORKS WITH FORKS)
+      # STEP 3: Download PR snapshot (CORRECT METHOD)
       # -------------------------------------------------
       - name: Download PR contents
         run: |
           echo "Downloading PR #${{ steps.pr.outputs.PR }}"
+
           curl -L \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -o pr.zip \
-            https://api.github.com/repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.PR }}/head.zip
+            https://github.com/${{ github.repository }}/archive/refs/pull/${{ steps.pr.outputs.PR }}/head.zip
 
           unzip pr.zip -d pr_contents
 
       # -------------------------------------------------
-      # STEP 4: Show downloaded files (debug)
+      # STEP 4: Debug — show downloaded files
       # -------------------------------------------------
       - name: Show PR files
         run: ls -R pr_contents || echo "No PR files found"
@@ -101,7 +101,7 @@ jobs:
         run: ls -R submissions || echo "No submissions folder"
 
       # -------------------------------------------------
-      # STEP 6: Python environment
+      # STEP 6: Python setup
       # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
