@@ -115,6 +115,7 @@ jobs:
             python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
           else
             echo "No scores.json found, skipping leaderboard update"
+          fi
 
       # Step 10: Upload leaderboard artifact
       - name: Upload leaderboard
