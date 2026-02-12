@@ -60,7 +60,7 @@ def score_submission(sub_path, truth):
 # ----------------------------
 def write_leaderboard(entries):
     with open(LEADERBOARD_FILE, "w") as f:
-        f.write("# 🏆 GNN Robustness Challenge Leaderboard\n\n")
+        f.write("# 🏆 GNN (Topology Ablation) Robustness Challenge Leaderboard\n\n")
         f.write("| Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |\n")
         f.write("|------|------------|----------|--------------|----------------|-----------|\n")
 
