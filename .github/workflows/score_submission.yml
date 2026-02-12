@@ -1,14 +1,13 @@
 name: Score Submissions
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
-
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to score"
-        required: true
+        description: "PR number to score manually"
+        required: false
 
 concurrency:
   group: leaderboard-update
@@ -16,142 +15,98 @@ concurrency:
 
 permissions:
   contents: write
-  pull-requests: write
-  issues: write
 
 jobs:
-
-  # -------------------------------------------------
-  # ✅ Participant confirmation message
-  # -------------------------------------------------
-  pr-feedback:
-    if: github.event_name == 'pull_request_target'
+  score:
     runs-on: ubuntu-latest
-    steps:
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: "✅ Submission received successfully! It will be evaluated automatically."
-            });
-
-  # -------------------------------------------------
-  # ✅ Scoring job
-  # -------------------------------------------------
-  scoring:
-    runs-on: ubuntu-latest
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'pull_request_target'
 
     steps:
       # -------------------------------------------------
-      # STEP 1: Checkout organiser repo (scoring code)
+      # STEP 1: Checkout organiser repository
       # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
-        with:
-          ref: main
 
       # -------------------------------------------------
       # STEP 2: Determine PR number
       # -------------------------------------------------
-      - name: Set PR number
+      - name: Get PR number
         id: pr
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-            echo "PR=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "number=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
           else
-            echo "PR=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           fi
 
       # -------------------------------------------------
-      # STEP 3: Download PR snapshot (CORRECT METHOD)
+      # STEP 3: Download PR snapshot (ZIP)
       # -------------------------------------------------
-      - name: Download PR contents
+      - name: Download PR snapshot
         run: |
-          echo "Downloading PR #${{ steps.pr.outputs.PR }}"
+          PR=${{ steps.pr.outputs.number }}
+          echo "Downloading PR #$PR"
 
           curl -L \
-            -o pr.zip \
-            https://github.com/${{ github.repository }}/archive/refs/pull/${{ steps.pr.outputs.PR }}/head.zip
+          -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/$PR \
+          | jq -r '.head.repo.zipball_url' > zip_url.txt
 
+          ZIP_URL=$(cat zip_url.txt)
+          echo "ZIP URL: $ZIP_URL"
+
+          curl -L "$ZIP_URL" -o pr.zip
           unzip pr.zip -d pr_contents
 
-      # -------------------------------------------------
-      # STEP 4: Debug — show downloaded files
-      # -------------------------------------------------
-      - name: Show PR files
-        run: ls -R pr_contents || echo "No PR files found"
+          echo "Extracted PR contents:"
+          ls -R pr_contents
 
       # -------------------------------------------------
-      # STEP 5: Copy submission files
+      # STEP 4: Copy submission files (ROBUST FIX)
       # -------------------------------------------------
-      - name: Copy submissions
+      - name: Copy submissions from PR
         run: |
+          echo "Searching for submission files in PR..."
+
           mkdir -p submissions
-          cp -v pr_contents/*/submissions/* submissions/ || echo "No submission files found"
 
-      - name: Show scoring files
-        run: ls -R submissions || echo "No submissions folder"
+          PR_SUB_DIR=$(find pr_contents -type d -name submissions | head -n 1)
+
+          if [ -z "$PR_SUB_DIR" ]; then
+            echo "❌ No submissions folder found in PR"
+            exit 1
+          fi
+
+          echo "Found submissions at: $PR_SUB_DIR"
+          ls -l "$PR_SUB_DIR"
+
+          cp -v "$PR_SUB_DIR"/* submissions/ || true
+
+          echo "Final submissions used for scoring:"
+          ls -l submissions
 
       # -------------------------------------------------
-      # STEP 6: Python setup
-      # -------------------------------------------------
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11
-
-      - name: Install dependencies
-        run: pip install pandas scikit-learn
-
-      # -------------------------------------------------
-      # STEP 7: Run scoring
+      # STEP 5: Run scoring
       # -------------------------------------------------
       - name: Run scoring
-        env:
-          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-        run: python scoring_script.py
+        run: |
+          python scoring_script.py
 
+      # -------------------------------------------------
+      # STEP 6: Update leaderboard
+      # -------------------------------------------------
       - name: Update leaderboard
-        run: python leaderboard/leaderboard_system.py --scores scores.json
+        run: |
+          python leaderboard/leaderboard_system.py --scores scores.json
 
-      - name: Upload leaderboard artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: leaderboard
-          path: leaderboard/leaderboard.md
-
-  # -------------------------------------------------
-  # ✅ Commit leaderboard (manual scoring only)
-  # -------------------------------------------------
-  commit-leaderboard:
-    needs: scoring
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: leaderboard
-          path: leaderboard
-
+      # -------------------------------------------------
+      # STEP 7: Commit leaderboard update
+      # -------------------------------------------------
       - name: Commit leaderboard
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add leaderboard/leaderboard.md
-          git diff --cached --quiet || git commit -m "Update leaderboard [skip ci]"
-          git pull --rebase origin main
+          git config --global user.name "leaderboard-bot"
+          git config --global user.email "bot@github.com"
+
+          git add leaderboard/leaderboard.md scores.json || true
+          git commit -m "Update leaderboard from PR #${{ steps.pr.outputs.number }}" || true
           git push
