@@ -1,13 +1,13 @@
 name: Score Submissions
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to score manually"
-        required: false
+        description: "PR number to score"
+        required: true
 
 concurrency:
   group: leaderboard-update
@@ -15,9 +15,10 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  score:
+  scoring:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,44 +27,36 @@ jobs:
       # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
-
-      # -------------------------------------------------
-      # STEP 2: Checkout PR contributor repo (REAL FIX)
-      # -------------------------------------------------
-      - name: Checkout participant PR code
-        if: github.event_name == 'pull_request'
-        uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.sha }}
-          path: participant_repo
-
-      # Manual trigger support
-      - name: Checkout participant PR manually
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
-          path: participant_repo
+          ref: main
 
       # -------------------------------------------------
-      # STEP 3: Copy submissions folder
+      # STEP 2: Fetch PR HEAD correctly (CRITICAL FIX)
+      # -------------------------------------------------
+      - name: Fetch participant PR
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+
+          echo "Fetching PR #$PR_NUMBER"
+          git fetch origin pull/$PR_NUMBER/head:participant_branch
+          git checkout participant_branch
+
+          echo "PR repo content:"
+          ls -R
+
+      # -------------------------------------------------
+      # STEP 3: Copy submissions from PR
       # -------------------------------------------------
       - name: Copy submissions
         run: |
-          echo "Participant repo structure:"
-          ls -R participant_repo
-
           mkdir -p submissions
 
-          if [ ! -d "participant_repo/submissions" ]; then
+          if [ ! -d "submissions" ]; then
             echo "❌ submissions folder not found in PR"
             exit 1
           fi
 
-          cp -v participant_repo/submissions/* submissions/ || true
-
-          echo "Final submissions used for scoring:"
+          echo "Submission files:"
           ls -l submissions
 
       # -------------------------------------------------
@@ -78,9 +71,11 @@ jobs:
         run: pip install pandas scikit-learn
 
       # -------------------------------------------------
-      # STEP 5: Run scoring
+      # STEP 5: Run scoring (SECRET FIXED)
       # -------------------------------------------------
       - name: Run scoring
+        env:
+          TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
         run: python scoring_script.py
 
       # -------------------------------------------------
@@ -98,5 +93,5 @@ jobs:
           git config --global user.email "bot@github.com"
 
           git add leaderboard/leaderboard.md scores.json || true
-          git commit -m "Update leaderboard from PR" || true
+          git commit -m "Update leaderboard" || true
           git push
