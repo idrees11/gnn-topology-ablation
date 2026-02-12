@@ -84,15 +84,15 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # Step 7: Set participant name
+      # Step 7: Set participant name using GitHub Action output
       - name: Set participant name
         id: participant
         run: |
-          if [ '${{ github.event_name }}' = "pull_request_target" ]; then
+          # Use PR author's GitHub username if PR triggered, otherwise "local"
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=local" >> $GITHUB_OUTPUT
-          fi
 
       # Step 8: Run scoring
       - name: Run scoring
@@ -115,7 +115,6 @@ jobs:
             python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
           else
             echo "No scores.json found, skipping leaderboard update"
-          fi
 
       # Step 10: Upload leaderboard artifact
       - name: Upload leaderboard
