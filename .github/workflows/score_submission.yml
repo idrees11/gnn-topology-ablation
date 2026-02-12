@@ -50,48 +50,51 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout organiser main
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      - name: Checkout participant PR (from fork)
+      # Step 2: Checkout participant PR (from fork)
+      - name: Checkout participant PR
         uses: actions/checkout@v4
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
+      # Step 3: Copy submissions
       - name: Copy submissions
         run: |
           mkdir -p submissions
           cp -r participant_repo/submissions/* submissions/ || echo "No submission files"
 
+      # Step 4: Show submissions
       - name: Show submissions
         run: ls -R submissions || echo "No submissions folder"
 
+      # Step 5: Set up Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
+      # Step 6: Install dependencies
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # -------------------------------------------------
-      # ✅ Set participant name
-      # -------------------------------------------------
+      # Step 7: Set participant name
       - name: Set participant name
         id: participant
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ '${{ github.event_name }}' = "pull_request_target" ]; then
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=local" >> $GITHUB_OUTPUT
+          fi
 
-      # -------------------------------------------------
-      # ✅ Run scoring
-      # -------------------------------------------------
+      # Step 8: Run scoring
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
@@ -105,9 +108,7 @@ jobs:
             --save-scores scores.json \
             --participant "${{ steps.participant.outputs.participant_name }}" || echo "Scoring skipped (PR-safe)"
 
-      # -------------------------------------------------
-      # ✅ Update leaderboard
-      # -------------------------------------------------
+      # Step 9: Update leaderboard
       - name: Update leaderboard
         run: |
           if [ -f scores.json ]; then
@@ -115,9 +116,7 @@ jobs:
           else
             echo "No scores.json found, skipping leaderboard update"
 
-      # -------------------------------------------------
-      # ✅ Upload leaderboard artifact
-      # -------------------------------------------------
+      # Step 10: Upload leaderboard artifact
       - name: Upload leaderboard
         if: always()
         uses: actions/upload-artifact@v4
