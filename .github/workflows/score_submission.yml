@@ -50,13 +50,11 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
-      # 🔥 STEP 1: Checkout organiser main
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # 🔥 STEP 2: Checkout participant PR from fork
       - name: Checkout participant PR (from fork)
         uses: actions/checkout@v4
         with:
@@ -64,7 +62,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
-      # 🔥 STEP 3: Copy submissions folder
       - name: Copy submissions
         run: |
           mkdir -p submissions
@@ -73,7 +70,6 @@ jobs:
       - name: Show submissions
         run: ls -R submissions || echo "No submissions folder"
 
-      # 🔥 STEP 4: Setup Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -82,21 +78,17 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # ✅ STEP 5: Run organizer scoring script (encode CSV secret properly)
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          # Encode raw CSV secret as proper base64
+          # Encode raw CSV secret as base64
           export TEST_LABELS_B64=$(echo "$TEST_LABELS_RAW" | base64 | tr -d '\n')
-
-          # Debug message (secret not printed; GitHub masks it)
           echo "Encoded TEST_LABELS_B64 ready for scoring script"
 
-          # Run the scoring script
+          # Run scoring script
           python scoring_script.py --save-scores scores.json || echo "Scoring skipped (PR-safe)"
 
-      # ✅ STEP 6: Update leaderboard
       - name: Update leaderboard
         run: |
           if [ -f scores.json ]; then
@@ -105,8 +97,7 @@ jobs:
             echo "No scores.json found, skipping leaderboard update"
           fi
 
-      # ✅ STEP 7: Upload leaderboard artifact
-      - name: Upload leaderboard
+      - name: Upload leaderboard artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -114,7 +105,7 @@ jobs:
           path: leaderboard/leaderboard.md
 
   # -------------------------------------------------
-  # ✅ Commit leaderboard
+  # ✅ Commit leaderboard (fixed)
   # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
@@ -131,7 +122,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: leaderboard
-          path: leaderboard
+          path: temp_leaderboard
+
+      - name: Move leaderboard to correct repo path
+        run: |
+          mkdir -p leaderboard
+          mv temp_leaderboard/leaderboard.md leaderboard/leaderboard.md
+
+      - name: List leaderboard folder
+        run: ls -R leaderboard
 
       - name: Commit and push leaderboard
         run: |
