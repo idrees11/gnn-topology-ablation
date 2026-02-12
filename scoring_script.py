@@ -8,13 +8,15 @@ import argparse
 from datetime import datetime
 
 # ----------------------------
-# CLI
+# CLI arguments
 # ----------------------------
 parser = argparse.ArgumentParser()
 parser.add_argument("--save-scores", type=str, default="scores.json")
 parser.add_argument("--participant", type=str, default="unknown")
 args = parser.parse_args()
-participant_name = args.participant
+
+PARTICIPANT_NAME = args.participant
+SCORES_JSON_FILE = args.save_scores
 
 # ----------------------------
 # Constants
@@ -22,14 +24,12 @@ participant_name = args.participant
 PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
-SCORES_JSON_FILE = args.save_scores
-
 EXPECTED_FILES = ["ideal_submission.csv", "perturbed_submission.csv"]
 
 print("Running scoring_script.py...")
 
 # ----------------------------
-# Load private labels from GitHub Secret
+# Load private labels
 # ----------------------------
 truth = None
 labels_b64 = os.getenv(PRIVATE_LABELS_ENV)
@@ -56,7 +56,7 @@ if truth is not None:
     elif "target" in truth.columns:
         truth_col = "target"
     else:
-        print("❌ Truth file missing label column")
+        print("❌ Truth file missing 'label' or 'target' column")
         truth = None
 
 # ----------------------------
@@ -142,41 +142,31 @@ else:
 # ----------------------------
 # Save leaderboard CSV
 # ----------------------------
-leaderboard = []
-
 timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 f1_ideal = next((s["f1_score"] for s in scores if s["submission"] == "ideal_submission.csv"), "N/A")
 f1_perturbed = next((s["f1_score"] for s in scores if s["submission"] == "perturbed_submission.csv"), "N/A")
 robustness_gap = round(f1_ideal - f1_perturbed, 6) if isinstance(f1_ideal, float) and isinstance(f1_perturbed, float) else "N/A"
 
-leaderboard.append({
-    "participant": participant_name,
+leaderboard_entry = {
+    "participant": PARTICIPANT_NAME,
     "f1_ideal": f1_ideal,
     "f1_perturbed": f1_perturbed,
     "robustness_gap": robustness_gap,
     "timestamp": timestamp
-})
+}
 
-df_leaderboard = pd.DataFrame(leaderboard)
+df_leaderboard = pd.DataFrame([leaderboard_entry])
 df_leaderboard.to_csv(LEADERBOARD_FILE, index=False)
-print("Leaderboard saved.")
+print("Leaderboard saved →", LEADERBOARD_FILE)
 
 # ----------------------------
 # Save scores JSON (for leaderboard_system.py)
 # ----------------------------
-scores_json = [
-    {
-        "participant": participant_name,
-        "f1_ideal": f1_ideal,
-        "f1_perturbed": f1_perturbed,
-        "robustness_gap": robustness_gap,
-        "timestamp": timestamp
-    }
-]
+scores_json = [leaderboard_entry]
 
 with open(SCORES_JSON_FILE, "w") as f:
     json.dump(scores_json, f, indent=2)
 
 print("Scores JSON saved →", SCORES_JSON_FILE)
-print("Scoring complete.")
+print("✅ Scoring complete.")
