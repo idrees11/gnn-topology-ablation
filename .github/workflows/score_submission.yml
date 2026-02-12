@@ -44,21 +44,23 @@ jobs:
   # ✅ Organizer scoring
   # -------------------------------------------------
   scoring:
-    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request_target'
 
     steps:
-      # 🔥 STEP 1: Checkout organiser repo (NEW scoring script)
+      # 🔥 STEP 1: Checkout organiser repo (main branch)
       - name: Checkout organiser main
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # 🔥 STEP 2: Checkout participant PR into separate folder
+      # 🔥 STEP 2: Checkout participant PR (AUTO or MANUAL)
       - name: Checkout participant submission
         uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/head', github.event.inputs.pr_number) || github.event.pull_request.head.sha }}
           path: participant_repo
 
       # 🔥 STEP 3: Copy only submissions folder
@@ -98,7 +100,7 @@ jobs:
   # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-latest
 
     steps:
