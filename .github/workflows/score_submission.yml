@@ -17,17 +17,23 @@ permissions:
   contents: write
 
 jobs:
-  # -------------------------------------------------
-  # 1. SCORING JOB (PR-safe, NO PUSH)
-  # -------------------------------------------------
+# -------------------------------------------------
+# 1. SCORING JOB (PR-safe, NO PUSH)
+# -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
+
     steps:
-      # ✅ IMPORTANT: checkout PR HEAD files safely
+      # ✅ Safe checkout of PR files
       - name: Checkout PR files
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Show repo structure (debug)
+        run: |
+          echo "Repo files:"
+          ls -R
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -37,30 +43,35 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      - name: Ensure submissions folder exists
-        run: mkdir -p submissions
+      # ✅ Verify submission files exist
+      - name: Check submission files
+        id: check_files
+        run: |
+          if [ -f submissions/ideal_submission.csv ] && [ -f submissions/perturbed_submission.csv ]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+            echo "✅ Submission files found"
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+            echo "❌ Required submission files missing"
+          fi
 
-      # ❌ Removed dummy submission (not needed now)
-
-      - name: Run scoring (ideal + perturbed)
+      # ✅ Run scoring only if valid
+      - name: Run scoring
+        if: steps.check_files.outputs.valid == 'true'
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
-        run: |
-          python scoring_script.py || echo "Scoring skipped (PR-safe)"
+        run: python scoring_script.py
 
       - name: Upload scores artifact
+        if: steps.check_files.outputs.valid == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: scores-json
           path: scores.json
 
       - name: Update leaderboard locally
-        run: |
-          if [ -f scores.json ]; then
-            python leaderboard/leaderboard_system.py --scores scores.json
-          else
-            echo "No scores.json found, skipping leaderboard update"
-          fi
+        if: steps.check_files.outputs.valid == 'true'
+        run: python leaderboard/leaderboard_system.py --scores scores.json
 
       - name: Upload leaderboard artifact
         if: always()
@@ -69,13 +80,14 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
-  # -------------------------------------------------
-  # 2. COMMIT JOB (push leaderboard to repo)
-  # -------------------------------------------------
+# -------------------------------------------------
+# 2. COMMIT JOB (ONLY ORGANIZER PUSHES)
+# -------------------------------------------------
   commit-leaderboard:
     needs: scoring
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v3
@@ -99,31 +111,43 @@ jobs:
           git pull --rebase origin main
           git push
 
-  # -------------------------------------------------
-  # 3. PR FEEDBACK JOB
-  # -------------------------------------------------
+# -------------------------------------------------
+# 3. PR FEEDBACK JOB (PARTICIPANT MESSAGE)
+# -------------------------------------------------
   pr-feedback:
+    needs: scoring
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
+
     permissions:
       pull-requests: write
       issues: write
+
     steps:
       - name: Comment on PR
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
+
             const body = `
-            ✅ Submission received!
+✅ Submission received successfully!
 
-            If your files were valid:
-            • Ideal submission scored
-            • Perturbed submission scored
-            • Leaderboard updated
+Your PR has been processed.
 
-            Check the **Actions tab → latest run → scoring logs**
-            `;
+If your files were valid:
+• Ideal submission scored
+• Perturbed submission scored
+• Results recorded for leaderboard update
+
+📊 Check:
+Actions → Latest run → scoring job logs
+
+If files were missing, please ensure:
+submissions/ideal_submission.csv  
+submissions/perturbed_submission.csv
+`;
+
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
