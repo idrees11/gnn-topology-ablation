@@ -1,0 +1,10 @@
+[
+  {
+    "submission": "ideal_submission.csv",
+    "f1_score": null
+  },
+  {
+    "submission": "perturbed_submission.csv",
+    "f1_score": null
+  }
+]
