@@ -23,25 +23,25 @@ jobs:
   # -------------------------------------------------
   # ✅ Participant confirmation message
   # -------------------------------------------------
-  pr-feedback:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: write
-    steps:
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: "✅ Submission received successfully! Organizer will evaluate it soon."
-            });
-
+ - name: Set participant name
+  id: participant
+  run: |
+    if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+      # PR-triggered run, get PR author directly
+      echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+    elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+      # workflow_dispatch run, optionally pass PR number
+      if [ -n "${{ github.event.inputs.pr_number }}" ]; then
+        AUTHOR=$(gh pr view ${{ github.event.inputs.pr_number }} --json author --jq '.author.login')
+        echo "participant_name=$AUTHOR" >> $GITHUB_OUTPUT
+      else
+        echo "participant_name=unknown" >> $GITHUB_OUTPUT
+      fi
+    else
+      echo "participant_name=unknown" >> $GITHUB_OUTPUT
+    fi
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # -------------------------------------------------
   # ✅ Organizer scoring
   # -------------------------------------------------
