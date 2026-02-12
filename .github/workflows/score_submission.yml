@@ -22,85 +22,75 @@ jobs:
 
     steps:
       # -------------------------------------------------
-      # STEP 1: Checkout organiser repository
+      # STEP 1: Checkout organiser repo (scoring code)
       # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
 
       # -------------------------------------------------
-      # STEP 2: Determine PR number
+      # STEP 2: Checkout PR contributor repo (REAL FIX)
       # -------------------------------------------------
-      - name: Get PR number
-        id: pr
+      - name: Checkout participant PR code
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: participant_repo
+
+      # Manual trigger support
+      - name: Checkout participant PR manually
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
+          path: participant_repo
+
+      # -------------------------------------------------
+      # STEP 3: Copy submissions folder
+      # -------------------------------------------------
+      - name: Copy submissions
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "number=${{ github.event.inputs.pr_number }}" >> $GITHUB_OUTPUT
-          else
-            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-          fi
-
-      # -------------------------------------------------
-      # STEP 3: Download PR snapshot (ZIP)
-      # -------------------------------------------------
-      - name: Download PR snapshot
-        run: |
-          PR=${{ steps.pr.outputs.number }}
-          echo "Downloading PR #$PR"
-
-          curl -L \
-          -H "Accept: application/vnd.github+json" \
-          https://api.github.com/repos/${{ github.repository }}/pulls/$PR \
-          | jq -r '.head.repo.zipball_url' > zip_url.txt
-
-          ZIP_URL=$(cat zip_url.txt)
-          echo "ZIP URL: $ZIP_URL"
-
-          curl -L "$ZIP_URL" -o pr.zip
-          unzip pr.zip -d pr_contents
-
-          echo "Extracted PR contents:"
-          ls -R pr_contents
-
-      # -------------------------------------------------
-      # STEP 4: Copy submission files (ROBUST FIX)
-      # -------------------------------------------------
-      - name: Copy submissions from PR
-        run: |
-          echo "Searching for submission files in PR..."
+          echo "Participant repo structure:"
+          ls -R participant_repo
 
           mkdir -p submissions
 
-          PR_SUB_DIR=$(find pr_contents -type d -name submissions | head -n 1)
-
-          if [ -z "$PR_SUB_DIR" ]; then
-            echo "❌ No submissions folder found in PR"
+          if [ ! -d "participant_repo/submissions" ]; then
+            echo "❌ submissions folder not found in PR"
             exit 1
           fi
 
-          echo "Found submissions at: $PR_SUB_DIR"
-          ls -l "$PR_SUB_DIR"
-
-          cp -v "$PR_SUB_DIR"/* submissions/ || true
+          cp -v participant_repo/submissions/* submissions/ || true
 
           echo "Final submissions used for scoring:"
           ls -l submissions
 
       # -------------------------------------------------
+      # STEP 4: Setup Python
+      # -------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install pandas scikit-learn
+
+      # -------------------------------------------------
       # STEP 5: Run scoring
       # -------------------------------------------------
       - name: Run scoring
-        run: |
-          python scoring_script.py
+        run: python scoring_script.py
 
       # -------------------------------------------------
       # STEP 6: Update leaderboard
       # -------------------------------------------------
       - name: Update leaderboard
-        run: |
-          python leaderboard/leaderboard_system.py --scores scores.json
+        run: python leaderboard/leaderboard_system.py --scores scores.json
 
       # -------------------------------------------------
-      # STEP 7: Commit leaderboard update
+      # STEP 7: Commit leaderboard
       # -------------------------------------------------
       - name: Commit leaderboard
         run: |
@@ -108,5 +98,5 @@ jobs:
           git config --global user.email "bot@github.com"
 
           git add leaderboard/leaderboard.md scores.json || true
-          git commit -m "Update leaderboard from PR #${{ steps.pr.outputs.number }}" || true
+          git commit -m "Update leaderboard from PR" || true
           git push
