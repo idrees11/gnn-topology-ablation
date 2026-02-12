@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: "PR number to score"
+        description: "PR number to score manually"
         required: true
 
 concurrency:
@@ -31,40 +31,44 @@ jobs:
           ref: main
 
       # -------------------------------------------------
-      # STEP 2: Fetch participant PR content
-      # Works for forks (your GitHub challenge setup)
+      # STEP 2: Fetch participant PR
       # -------------------------------------------------
       - name: Fetch participant PR
         run: |
           PR_NUMBER=${{ github.event.pull_request.number || github.event.inputs.pr_number }}
-
           echo "Fetching PR #$PR_NUMBER"
+
           git fetch origin pull/$PR_NUMBER/head:participant_branch
           git checkout participant_branch
 
-          echo "PR content:"
+          echo "PR repo structure:"
           ls -R
 
       # -------------------------------------------------
-      # STEP 3: Validate submissions exist
+      # STEP 3: Locate and copy submissions
       # -------------------------------------------------
-      - name: Validate submission files
+      - name: Locate submissions folder
         run: |
-          if [ ! -f "submissions/ideal_submission.csv" ]; then
-            echo "❌ ideal_submission.csv missing"
+          # Search recursively for submissions folder
+          SUB_DIR=$(find . -type d -name submissions | head -n 1)
+
+          if [ -z "$SUB_DIR" ]; then
+            echo "❌ No submissions folder found in PR"
             exit 1
           fi
 
-          if [ ! -f "submissions/perturbed_submission.csv" ]; then
-            echo "❌ perturbed_submission.csv missing"
-            exit 1
-          fi
+          echo "Found submissions folder at: $SUB_DIR"
+          ls -l "$SUB_DIR"
 
-          echo "Submission files found:"
+          # Copy files to runner submissions/ folder
+          mkdir -p submissions
+          cp -v "$SUB_DIR"/* submissions/ || true
+
+          echo "Final submissions used for scoring:"
           ls -l submissions
 
       # -------------------------------------------------
-      # STEP 4: Setup Python
+      # STEP 4: Setup Python environment
       # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -75,7 +79,7 @@ jobs:
         run: pip install pandas scikit-learn
 
       # -------------------------------------------------
-      # STEP 5: Decode private labels (your secret)
+      # STEP 5: Decode private labels secret
       # -------------------------------------------------
       - name: Decode private labels
         env:
@@ -85,7 +89,7 @@ jobs:
           echo "Private labels loaded"
 
       # -------------------------------------------------
-      # STEP 6: Run scoring (your script interface)
+      # STEP 6: Run scoring for both submissions
       # -------------------------------------------------
       - name: Run scoring
         run: |
