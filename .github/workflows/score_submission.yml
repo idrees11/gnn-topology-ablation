@@ -88,34 +88,30 @@ jobs:
       - name: Set participant name
         id: participant
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [[ "${{ github.event_name }}" == "pull_request_target" ]]; then
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
-            echo "participant_name=local" >> $GITHUB_OUTPUT
-          fi
+            echo "participant_name=unknown" >> $GITHUB_OUTPUT
 
       # Step 8: Run scoring
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
         run: |
-          # Encode raw CSV secret as base64
           export TEST_LABELS_B64=$(echo "$TEST_LABELS_RAW" | base64 | tr -d '\n')
           echo "Encoded TEST_LABELS_B64 ready for scoring script"
 
-          # Run scoring script with participant name
           python scoring_script.py \
             --save-scores scores.json \
-            --participant "${{ steps.participant.outputs.participant_name }}" || echo "Scoring skipped (PR-safe)"
+            --participant "${{ steps.participant.outputs.participant_name }}"
 
       # Step 9: Update leaderboard
       - name: Update leaderboard
         run: |
-          if [ -f scores.json ]; then
-            python leaderboard/leaderboard_system.py --scores scores.json || echo "Leaderboard update skipped"
+          if [[ -f scores.json ]]; then
+            python leaderboard/leaderboard_system.py --scores scores.json
           else
             echo "No scores.json found, skipping leaderboard update"
-          fi
 
       # Step 10: Upload leaderboard artifact
       - name: Upload leaderboard
