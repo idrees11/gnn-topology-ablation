@@ -56,7 +56,7 @@ def score_submission(sub_path, truth):
     return round(f1_score(y_true, y_pred, average="macro"), 4)
 
 # ----------------------------
-# Write leaderboard (NEW FORMAT)
+# Write leaderboard
 # ----------------------------
 def write_leaderboard(entries):
     with open(LEADERBOARD_FILE, "w") as f:
@@ -83,7 +83,7 @@ def write_leaderboard(entries):
     print(f"Leaderboard updated → {LEADERBOARD_FILE}")
 
 # ----------------------------
-# Main
+# Main leaderboard update
 # ----------------------------
 def update_leaderboard(scores_file=None):
     leaderboard = []
@@ -96,6 +96,7 @@ def update_leaderboard(scores_file=None):
             scores = json.load(f)
 
         for s in scores:
+            # Ensure all fields exist
             leaderboard.append({
                 "participant": s.get("participant", "unknown"),
                 "f1_ideal": s.get("f1_ideal", "N/A"),
@@ -139,6 +140,22 @@ if __name__ == "__main__":
         default=None,
         help="Optional path to scores.json to update leaderboard PR-safe"
     )
+    parser.add_argument(
+        "--participant",
+        type=str,
+        default="unknown",
+        help="Participant name to record in leaderboard"
+    )
     args = parser.parse_args()
+
+    # If scores.json exists, inject participant name if missing
+    if args.scores and os.path.exists(args.scores):
+        with open(args.scores, "r") as f:
+            data = json.load(f)
+        for d in data:
+            if "participant" not in d or d["participant"] == "unknown":
+                d["participant"] = args.participant
+        with open(args.scores, "w") as f:
+            json.dump(data, f, indent=4)
 
     update_leaderboard(scores_file=args.scores)
