@@ -21,9 +21,6 @@ permissions:
 
 jobs:
 
-  # -------------------------------------------------
-  # ✅ Participant confirmation message
-  # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -40,9 +37,6 @@ jobs:
               body: "✅ Submission received successfully! Organizer will evaluate it soon."
             });
 
-  # -------------------------------------------------
-  # ✅ Organizer scoring (PR or Manual)
-  # -------------------------------------------------
   scoring:
     runs-on: ubuntu-latest
     if: |
@@ -50,59 +44,30 @@ jobs:
       github.event_name == 'pull_request_target'
 
     steps:
-      # -------------------------------------------------
-      # STEP 1: Checkout organiser repo (scoring code)
-      # -------------------------------------------------
-      - name: Checkout organiser main
+      # Checkout organiser repository (contains scoring code)
+      - name: Checkout organiser repo
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # -------------------------------------------------
-      # STEP 2A: Checkout participant PR (automatic scoring)
-      # -------------------------------------------------
-      - name: Checkout participant PR
-        if: github.event_name == 'pull_request_target'
+      # Checkout PR contents (works for both triggers)
+      - name: Checkout PR submission
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.inputs.pr_number) }}
           path: participant_repo
 
-      # -------------------------------------------------
-      # STEP 2B: Checkout participant PR (manual scoring)
-      # -------------------------------------------------
-      - name: Checkout participant PR (manual)
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/checkout@v4
-        with:
-          ref: refs/pull/${{ github.event.inputs.pr_number }}/head
-          path: participant_repo
+      - name: Show participant repo
+        run: ls -R participant_repo || echo "participant repo missing"
 
-      # -------------------------------------------------
-      # STEP 3: Debug — show downloaded files
-      # -------------------------------------------------
-      - name: Show participant repo structure
-        run: |
-          echo "===== PARTICIPANT REPO CONTENT ====="
-          ls -R participant_repo || echo "participant_repo missing"
-
-      # -------------------------------------------------
-      # STEP 4: Copy submission files for scoring
-      # -------------------------------------------------
       - name: Copy submissions
         run: |
           mkdir -p submissions
-          cp -v participant_repo/submissions/* submissions/ || echo "No submission files copied"
+          cp -v participant_repo/submissions/* submissions/ || echo "No submission files"
 
-      - name: Show submissions used for scoring
-        run: |
-          echo "===== FILES USED FOR SCORING ====="
-          ls -R submissions || echo "No submissions folder"
+      - name: Show scoring files
+        run: ls -R submissions || echo "No submissions folder"
 
-      # -------------------------------------------------
-      # STEP 5: Python setup
-      # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -111,9 +76,6 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # -------------------------------------------------
-      # STEP 6: Run scoring script
-      # -------------------------------------------------
       - name: Run scoring
         env:
           TEST_LABELS_B64: ${{ secrets.TEST_LABELS_B64 }}
@@ -128,9 +90,6 @@ jobs:
           name: leaderboard
           path: leaderboard/leaderboard.md
 
-  # -------------------------------------------------
-  # ✅ Commit leaderboard (manual scoring only)
-  # -------------------------------------------------
   commit-leaderboard:
     needs: scoring
     if: github.event_name == 'workflow_dispatch'
