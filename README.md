@@ -270,7 +270,7 @@ gnn-challenge/
 │   ├── dataset.py
 │   ├── model.py
 │   ├── baseline.py
-│   └── requirements.txt
+│   
 │
 ├── submissions/
 │   └── sample_submission.csv
@@ -279,6 +279,7 @@ gnn-challenge/
 │
 ├── leaderboard/
 │   └── leaderboard.md
+└── requirements.txt
 │
 └── README.md
 ```
