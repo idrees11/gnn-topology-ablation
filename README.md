@@ -44,10 +44,10 @@ Build a GNN that effectively leverages graph topology, especially via structural
 The test set is evaluated under two conditions:
 
 Condition	Description	Submission File
-
+```
 🟢 Ideal	Graphs are clean, with no perturbations. Node features exactly as computed.	submissions/ideal_submission.csv
 🔴 Perturbed	Graphs have modified node features to simulate realistic distribution shifts:
-
+```
 • Feature shift: +0.3
 • Gaussian noise: N(0,0.05^2)
 
