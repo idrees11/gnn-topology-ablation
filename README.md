@@ -174,13 +174,14 @@ Official leaderboard metric
 
 1️⃣ Install Dependencies
 
-pip install -r requirements.txt
+**pip install -r requirements.txt**
 
 
 2️⃣ Run the Baseline Model
 
-cd starter_code
-python baseline.py
+**cd starter_code**
+
+**python baseline.py**
 
 
 This will:
@@ -211,7 +212,7 @@ Participants must submit two CSV files:
 
 Ideal predictions (ideal_submission.csv)
 
-graph_index,target
+**graph_index,target**
 0,1
 1,0
 2,1
@@ -220,7 +221,7 @@ graph_index,target
 
 Perturbed predictions (perturbed_submission.csv)
 
-graph_index,target
+**graph_index,target**
 0,1
 1,1
 2,0
@@ -300,19 +301,19 @@ gnn-topology-ablation/
 🏁 Step-by-Step Commands
 -------------------------
 
-1. Enter starter code
+1. **Enter starter code**
 
     cd starter_code
 
-2. Run baseline model
+2. **Run baseline model**
 
     python baseline.py
 
-3. Return to repository root
+3. **Return to repository root**
 
     cd ..
 
-4. Verify submission files
+4. **Verify submission files**
 
     ls submissions or Dir submissions
 
