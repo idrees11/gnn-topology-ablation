@@ -212,21 +212,23 @@ Participants must submit two CSV files:
 
 Ideal predictions (ideal_submission.csv)
 
+```
 **graph_index,target**
 0,1
 1,0
 2,1
 ...
-
+```
 
 Perturbed predictions (perturbed_submission.csv)
 
+```
 **graph_index,target**
 0,1
 1,1
 2,0
 ...
-
+```
 
 Columns:
 
