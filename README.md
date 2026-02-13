@@ -302,23 +302,23 @@ gnn-topology-ablation/
 
 1. Enter starter code
 
-cd starter_code
+    cd starter_code
 
 2. Run baseline model
 
-python baseline.py
+    python baseline.py
 
 3. Return to repository root
 
-cd ..
+    cd ..
 
 4. Verify submission files
 
-ls submissions or Dir submissions
+    ls submissions or Dir submissions
 
 5. (Optional) Local scoring (organisers only)
 
-python scoring_script.py --participant "YourTeamName"
+    python scoring_script.py --participant "YourTeamName"
 
 ----------------
 📬 Contact
