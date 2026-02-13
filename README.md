@@ -259,7 +259,7 @@ GIN + structural features is a strong baseline
 -------------------------
 **📁 Repository Structure**
 --------------------------
-'''
+```text
 gnn-challenge/
 │
 ├── data/
