@@ -260,7 +260,7 @@ GIN + structural features is a strong baseline
 **📁 Repository Structure**
 --------------------------
 ```
-gnn-challenge/
+gnn-topology-ablation/
 │
 ├── data/
 │   ├── train.csv
