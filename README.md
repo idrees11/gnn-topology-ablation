@@ -1,5 +1,9 @@
-🧠 GNN Challenge: Graph Classification with Topological Features
-🎯 Challenge Overview
+-------------------------------------------------------------------------
+**🧠 GNN Challenge: Graph Classification with Topological Features**
+-------------------------------------------------------------------------
+------------------------------------
+****🎯 Challenge Overview****
+-----------------------------------
 
 Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
 
@@ -17,59 +21,51 @@ to improve classification performance.
 
 The challenge uses the MUTAG dataset, which is small but non-trivial, requiring careful use of topological features for strong results.
 
-🧩 Problem Description
+-----------------------
+**🧩 Problem Description**
+-----------------------
 
 Predict a graph-level class label for each molecular graph.
 
 You are given:
 
-The graph topology (nodes and edges)
+The graph topology (nodes & edges)
 
 Basic node features
 
-Your goal is to build a GNN that effectively leverages graph topology, especially via structural/topological node feature augmentation.
+Your goal:
 
-🔹 Evaluation Conditions
+Build a GNN that effectively leverages graph topology, especially via structural/topological node feature augmentation.
+
+------------------------
+**🔹 Evaluation Conditions**
+------------------------
 
 The test set is evaluated under two conditions:
 
-Ideal Condition
+Condition	Description	Submission File
 
-Graphs are clean, with no perturbations.
+🟢 Ideal	Graphs are clean, with no perturbations. Node features exactly as computed.	submissions/ideal_submission.csv
+🔴 Perturbed	Graphs have modified node features to simulate realistic distribution shifts:
 
-Node features are exactly as computed from the original graph topology.
+• Feature shift: +0.3
+• Gaussian noise: N(0,0.05^2)
 
-Submission file:
-
-submissions/ideal_submission.csv
-
-
-Perturbed Condition
-
-Graphs have modified node features to simulate realistic distribution shifts:
-
-Feature shift: all node features are increased by a constant (+0.3)
-
-Gaussian noise: additive noise applied to node features (N(0, 0.05^2))
-
-Node topology (edges) remains unchanged.
-
-Submission file:
-
-submissions/perturbed_submission.csv
-
+Edges remain unchanged.	submissions/perturbed_submission.csv
 
 ⚠️ Participants must submit predictions for both conditions.
 Failing to submit either file will result in a score of N/A for that condition.
 
-Robustness gap is computed as:
+Robustness gap:
 
 robustness_gap = F1_ideal - F1_perturbed
 
 
 Smaller gaps indicate more robust models.
 
-🧠 Problem Type
+----------------
+**🧠 Problem Type**
+----------------
 
 Graph Classification
 
@@ -77,9 +73,11 @@ Supervised Learning
 
 Binary Classification
 
-📚 Relevant GNN Concepts
+---------------------------
+**📚 Relevant GNN Concepts**
+---------------------------
 
-Participants can use concepts from DGL Lectures 1.1–4.6:
+Use concepts from DGL Lectures 1.1–4.6:
 
 Message Passing Neural Networks (MPNNs)
 
@@ -103,7 +101,9 @@ PageRank
 
 k-core number
 
-📦 Dataset
+-----------
+**📦 Dataset**
+-----------
 
 Dataset: MUTAG (from TUDataset)
 
@@ -117,7 +117,9 @@ Edges: Undirected
 
 Source: Automatically downloaded from TUDataset
 
-🗂️ Data Splits
+----------------
+**🗂️ Data Splits**
+----------------
 Split	Percentage
 Train	70%
 Validation	10%
@@ -131,7 +133,9 @@ test.csv → graph indices only (labels hidden)
 
 ⚠️ Test labels are hidden and used only by the organisers for evaluation.
 
-📊 Evaluation Metric
+-----------------------
+**📊 Evaluation Metric**
+-----------------------
 
 Primary Metric: Macro F1-score
 
@@ -148,7 +152,9 @@ Difficult to optimize directly
 
 Official leaderboard metric
 
-⚙️ Constraints
+-----------------
+**⚙️ Constraints**
+-----------------
 
 ❌ No external datasets
 
@@ -162,7 +168,9 @@ Official leaderboard metric
 
 ✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
 
-🚀 Getting Started
+--------------------
+**🚀 Getting Started**
+--------------------
 
 1️⃣ Install Dependencies
 
@@ -177,13 +185,15 @@ python baseline.py
 
 This will:
 
-Train a simple GIN model on ideal training data
+Train a GIN baseline on ideal training data
 
-Generate predictions for both ideal and perturbed test sets
+Generate predictions for both ideal & perturbed test sets
 
 Save submission files to submissions/
 
-📤 Submission Format
+---------------------
+**📤 Submission Format**
+---------------------
 
 Participants must submit two CSV files:
 
@@ -207,42 +217,49 @@ graph_index,target
 
 Columns:
 
-graph_index → Index of the graph in the dataset
+graph_index → Index of the graph
 
 target → Predicted class label (0 or 1)
 
-🏆 Leaderboard & Submission Notes
+-----------------------------------
+**🏆 Leaderboard & Submission Notes**
+-----------------------------------
 
-Submissions are collected when you upload your CSV files.
+Submissions are collected, but scores are NOT displayed immediately.
 
-Leaderboard updates are controlled by the organisers and use private test labels stored securely as GitHub Secrets.
+Leaderboard updates are controlled by organisers using hidden test labels stored securely via GitHub Secrets.
 
-Participants will only see a “Submission successful” message; scores and ranks are not displayed immediately.
-
-Example message:
+After submission, you will only see:
 
 ✅ Submission successful
 
+Scores, robustness gap, and rank are updated later by organisers.
 
 Leaderboard file: leaderboard/leaderboard.md
 
-Scores are computed automatically using macro F1-score for both ideal and perturbed conditions.
+Score calculation:
+
+Macro F1-score for ideal and perturbed
 
 Robustness gap = F1_ideal - F1_perturbed
 
-💡 Tips for Success
+-----------------------------
+**💡 Tips for Success**
+-----------------------------
 
-Structural features are crucial for performance
+Structural features are crucial
 
-Experiment with different combinations of topological descriptors
+Experiment with different topological descriptors
 
 Regularization is important for small datasets
 
 Simpler models often generalize better
 
 GIN + structural features is a strong baseline
-
-📁 Repository Structure
+-------------------------
+**📁 Repository Structure**
+--------------------------
+'''
 gnn-challenge/
 │
 ├── data/
@@ -264,8 +281,10 @@ gnn-challenge/
 │   └── leaderboard.md
 │
 └── README.md
-
-🏁 Step-by-Step Commands
+'''
+--------------------------
+**🏁 Step-by-Step Commands**
+-------------------------
 # 1. Enter starter code
 cd starter_code
 
@@ -280,28 +299,12 @@ ls submissions
 
 # 5. (Optional) Local scoring (organisers only)
 python scoring_script.py --participant "YourTeamName"
-
-📬 Contact
-
-For questions or clarifications, open a GitHub Issue in this repository.
-
-📜 License
-
+----------------
+**📬 Contact**
+----------------
+For questions or clarifications, open a GitHub Issue in this repository. Or you can contact me at, idrees11@yahoo.com (+918123434057)
+-------------------
+**📜 License**
+-------------------
 This project is released under the MIT License.
 See the LICENSE file for details.
-
-✅ This README now clearly covers:
-
-Ideal vs perturbed conditions
-
-Exact perturbations applied
-
-Two required submission files
-
-Organiser-controlled leaderboard workflow
-
-Robustness gap explanation
-
-If you want, I can also add a small diagram showing the baseline pipeline → ideal & perturbed predictions → submission flow, which usually helps participants understand the workflow visually.
-
-Do you want me to create that diagram too?
