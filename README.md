@@ -283,7 +283,7 @@ gnn-challenge/
 └── README.md
 ```
 --------------------------
-**🏁 Step-by-Step Commands**
+🏁 Step-by-Step Commands
 -------------------------
 # 1. Enter starter code
 cd starter_code
@@ -300,7 +300,7 @@ ls submissions
 # 5. (Optional) Local scoring (organisers only)
 python scoring_script.py --participant "YourTeamName"
 ----------------
-**📬 Contact**
+📬 Contact
 ----------------
 For questions or clarifications, open a GitHub Issue in this repository. Or you can contact me at, idrees11@yahoo.com (+918123434057)
 -------------------
