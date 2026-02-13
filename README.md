@@ -281,7 +281,7 @@ gnn-challenge/
 │   └── leaderboard.md
 │
 └── README.md
-'''text
+'''
 --------------------------
 **🏁 Step-by-Step Commands**
 -------------------------
