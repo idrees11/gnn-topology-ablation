@@ -174,7 +174,7 @@ Official leaderboard metric
 
 1️⃣ Install Dependencies
 
-pip install -r starter_code/requirements.txt
+pip install -r requirements.txt
 
 
 2️⃣ Run the Baseline Model
