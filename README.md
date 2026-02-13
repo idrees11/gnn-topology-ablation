@@ -295,7 +295,7 @@ python baseline.py
 cd ..
 
 # 4. Verify submission files
-ls submissions
+ls submissions or Dir submissions
 
 # 5. (Optional) Local scoring (organisers only)
 python scoring_script.py --participant "YourTeamName"
