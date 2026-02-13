@@ -1,52 +1,85 @@
-**🧠 GNN Challenge: Graph Classification with Topological Features**
+🧠 GNN Challenge: Graph Classification with Topological Features
+🎯 Challenge Overview
 
-**🎯 Challenge Overview**
-<pre>
 Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
-This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with a strong emphasis on topological (structural) feature augmentation.
 
-Participants are expected to design models that effectively combine:
-  
+This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with an emphasis on topological (structural) feature augmentation.
+
+Participants are expected to design models that combine:
+
 Node features
+
 Graph structure
+
 Structural / topological descriptors
+
 to improve classification performance.
 
-The challenge is small, fast, and non-trivial, and can be fully solved using concepts covered in DGL Lectures 1.1–4.6:
-👉 https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T
-</pre>
+The challenge uses the MUTAG dataset, which is small but non-trivial, requiring careful use of topological features for strong results.
 
-****🏆 View Live Leaderboard****
-<pre>
-(Link to your leaderboard page or GitHub file here)
-</pre>
+🧩 Problem Description
 
-**🧩 Problem Description**
-<pre>
-The task is to predict a graph-level class label for each input graph.
+Predict a graph-level class label for each molecular graph.
 
-Each graph represents a molecular structure from the MUTAG dataset.
 You are given:
 
-The graph topology
+The graph topology (nodes and edges)
 
 Basic node features
 
-Your goal is to build a GNN that leverages graph topology effectively, especially through structural / topological feature augmentation.
-</pre>
+Your goal is to build a GNN that effectively leverages graph topology, especially via structural/topological node feature augmentation.
 
-****🧠 Problem Type****
-<pre>
+🔹 Evaluation Conditions
+
+The test set is evaluated under two conditions:
+
+Ideal Condition
+
+Graphs are clean, with no perturbations.
+
+Node features are exactly as computed from the original graph topology.
+
+Submission file:
+
+submissions/ideal_submission.csv
+
+
+Perturbed Condition
+
+Graphs have modified node features to simulate realistic distribution shifts:
+
+Feature shift: all node features are increased by a constant (+0.3)
+
+Gaussian noise: additive noise applied to node features (N(0, 0.05^2))
+
+Node topology (edges) remains unchanged.
+
+Submission file:
+
+submissions/perturbed_submission.csv
+
+
+⚠️ Participants must submit predictions for both conditions.
+Failing to submit either file will result in a score of N/A for that condition.
+
+Robustness gap is computed as:
+
+robustness_gap = F1_ideal - F1_perturbed
+
+
+Smaller gaps indicate more robust models.
+
+🧠 Problem Type
+
 Graph Classification
 
 Supervised Learning
 
 Binary Classification
-</pre>
 
-****📚 Relevant GNN Concepts (DGL 1.1–4.6)****
-<pre>
-This challenge can be solved using:
+📚 Relevant GNN Concepts
+
+Participants can use concepts from DGL Lectures 1.1–4.6:
 
 Message Passing Neural Networks (MPNNs)
 
@@ -54,11 +87,11 @@ Graph Isomorphism Networks (GIN)
 
 Neighborhood aggregation
 
-Graph-level readout (e.g., global mean / sum pooling)
+Graph-level readout (global mean pooling)
 
 Structural / Topological Node Features
 
-You are encouraged to experiment with:
+Topological descriptors to experiment with:
 
 Node degree
 
@@ -69,10 +102,9 @@ Betweenness centrality
 PageRank
 
 k-core number
-</pre>
 
-****📦 Dataset****
-<pre>
+📦 Dataset
+
 Dataset: MUTAG (from TUDataset)
 
 Graphs: 188 molecular graphs
@@ -85,12 +117,7 @@ Edges: Undirected
 
 Source: Automatically downloaded from TUDataset
 
-The dataset is small enough for fast experimentation, yet rich enough to benefit strongly from structural features.
-</pre>
-****🗂️ Data Splits****
-<pre>
-A fixed random seed is used to ensure fair comparison.
-
+🗂️ Data Splits
 Split	Percentage
 Train	70%
 Validation	10%
@@ -102,16 +129,16 @@ train.csv → graph indices + labels
 
 test.csv → graph indices only (labels hidden)
 
-⚠️ Test labels are hidden and used only by the organisers for scoring.
-</pre>
+⚠️ Test labels are hidden and used only by the organisers for evaluation.
 
-****📊 Evaluation Metric****
-<pre>
+📊 Evaluation Metric
+
 Primary Metric: Macro F1-score
 
 f1_score(y_true, y_pred, average="macro")
 
-Why Macro-F1?
+
+Why Macro F1?
 
 Sensitive to class imbalance
 
@@ -119,12 +146,9 @@ Encourages balanced performance across classes
 
 Difficult to optimize directly
 
-Used as the official leaderboard metric
-</pre>
+Official leaderboard metric
 
-****⚙️ Constraints****
-<pre>
-To keep the competition fair and focused:
+⚙️ Constraints
 
 ❌ No external datasets
 
@@ -137,38 +161,47 @@ To keep the competition fair and focused:
 ⏱ Models must run within 10 minutes on CPU
 
 ✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
-</pre>
 
-****🚀 Getting Started****
-<pre>
-  
+🚀 Getting Started
+
 1️⃣ Install Dependencies
+
 pip install -r starter_code/requirements.txt
 
+
 2️⃣ Run the Baseline Model
+
 cd starter_code
 python baseline.py
 
 
-**This will:**
+This will:
 
-Train a simple GIN baseline
+Train a simple GIN model on ideal training data
 
-Generate predictions on the test set
+Generate predictions for both ideal and perturbed test sets
 
-Save a submission file to:
+Save submission files to submissions/
 
-submissions/sample_submission.csv
-</pre>
+📤 Submission Format
 
-****📤 Submission Format****
-<pre>
-Submissions must be CSV files with the following format:
+Participants must submit two CSV files:
+
+Ideal predictions (ideal_submission.csv)
 
 graph_index,target
 0,1
 1,0
 2,1
+...
+
+
+Perturbed predictions (perturbed_submission.csv)
+
+graph_index,target
+0,1
+1,1
+2,0
 ...
 
 
@@ -178,55 +211,38 @@ graph_index → Index of the graph in the dataset
 
 target → Predicted class label (0 or 1)
 
-Your submission file should be named:
+🏆 Leaderboard & Submission Notes
 
-submissions/your_team_name.csv
-</pre>
+Submissions are collected when you upload your CSV files.
 
-****🧪 Scoring****
-<pre>
-Submissions are evaluated using hidden test labels:
+Leaderboard updates are controlled by the organisers and use private test labels stored securely as GitHub Secrets.
 
-f1_score(y_true, y_pred, average="macro")
+Participants will only see a “Submission successful” message; scores and ranks are not displayed immediately.
+
+Example message:
+
+✅ Submission successful
 
 
-Scores are computed automatically by the organiser’s scoring pipeline.
-</pre>
+Leaderboard file: leaderboard/leaderboard.md
 
-****🏆 Leaderboard****
-<pre>
-The leaderboard is automatically updated when you submit your solution.
+Scores are computed automatically using macro F1-score for both ideal and perturbed conditions.
 
-The leaderboard shows:
+Robustness gap = F1_ideal - F1_perturbed
 
-Rank
+💡 Tips for Success
 
-Team Name
+Structural features are crucial for performance
 
-Macro F1-score
+Experiment with different combinations of topological descriptors
 
-Submission Time
-
-Leaderboard file:
-
-leaderboard/leaderboard.md
-</pre>
-
-****💡 Tips for Success****
-<pre>
-Structural features matter more than you think
-
-Try different combinations of topological descriptors
-
-Regularization is crucial for small datasets
+Regularization is important for small datasets
 
 Simpler models often generalize better
 
 GIN + structural features is a strong baseline
-</pre>
-**## 📁 Repository Structure ** 
-<pre>
-```text
+
+📁 Repository Structure
 gnn-challenge/
 │
 ├── data/
@@ -248,38 +264,44 @@ gnn-challenge/
 │   └── leaderboard.md
 │
 └── README.md
-</pre>
 
-****🏁 Step-by-Step Commands****
-<pre>
-  
-1️⃣ Enter starter code directory
+🏁 Step-by-Step Commands
+# 1. Enter starter code
 cd starter_code
 
-2️⃣ Run baseline model
+# 2. Run baseline model
 python baseline.py
 
-3️⃣ Return to repository root
+# 3. Return to repository root
 cd ..
 
-4️⃣ Verify submission file
+# 4. Verify submission files
 ls submissions
 
-5️⃣ (Optional) Local scoring (organisers only)
-python scoring_script.py submissions/sample_submission.csv
+# 5. (Optional) Local scoring (organisers only)
+python scoring_script.py --participant "YourTeamName"
 
-</pre>
+📬 Contact
 
-****📬 Contact****
-<pre>
+For questions or clarifications, open a GitHub Issue in this repository.
 
-For questions or clarifications, please open a GitHub Issue in this repository.
-</pre>
+📜 License
 
-**📜 License**
-<pre>
 This project is released under the MIT License.
 See the LICENSE file for details.
-</pre>
 
-<>
+✅ This README now clearly covers:
+
+Ideal vs perturbed conditions
+
+Exact perturbations applied
+
+Two required submission files
+
+Organiser-controlled leaderboard workflow
+
+Robustness gap explanation
+
+If you want, I can also add a small diagram showing the baseline pipeline → ideal & perturbed predictions → submission flow, which usually helps participants understand the workflow visually.
+
+Do you want me to create that diagram too?
