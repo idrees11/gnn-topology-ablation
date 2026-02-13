@@ -191,6 +191,18 @@ Generate predictions for both ideal & perturbed test sets
 
 Save submission files to submissions/
 
+```
+**Important:**  
+- Participants should **develop or modify their GNN model only in `model.py`**.  
+- **Do not modify** `baseline.py`, `dataset.py`, or `scoring_script.py`.  
+- The `baseline.py` script will handle:  
+  - Training the model on **ideal data**  
+  - Generating predictions for **ideal** and **perturbed** test sets  
+  - Saving submission files in `submissions/`  
+- Your model must accept the inputs as defined in `baseline.py` and output predictions compatible with the pipeline.
+
+> In short: **Develop your model in `model.py` only. Everything else is handled by the baseline and organiser pipeline.**
+```
 ---------------------
 **📤 Submission Format**
 ---------------------
