@@ -295,29 +295,42 @@ gnn-topology-ablation/
 │
 └── README.md
 ```
+
 --------------------------
 🏁 Step-by-Step Commands
 -------------------------
-# 1. Enter starter code
+
+1. Enter starter code
+
 cd starter_code
 
-# 2. Run baseline model
+2. Run baseline model
+
 python baseline.py
 
-# 3. Return to repository root
+3. Return to repository root
+
 cd ..
 
-# 4. Verify submission files
+4. Verify submission files
+
 ls submissions or Dir submissions
 
-# 5. (Optional) Local scoring (organisers only)
+5. (Optional) Local scoring (organisers only)
+
 python scoring_script.py --participant "YourTeamName"
+
 ----------------
 📬 Contact
 ----------------
+
 For questions or clarifications, open a GitHub Issue in this repository. Or you can contact me at, idrees11@yahoo.com (+918123434057)
+
 -------------------
+
 **📜 License**
+
 -------------------
+
 This project is released under the MIT License.
 See the LICENSE file for details.
