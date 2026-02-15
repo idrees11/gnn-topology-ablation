@@ -1,5 +1,5 @@
 -------------------------------------------------------------
-GNN Challenge: Graph Classification with Topological Features
+GNN Challenge: Graph Classification with Topological Features (Ablation Study)
 -------------------------------------------------------------
 
 **Overview**
