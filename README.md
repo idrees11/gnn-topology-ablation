@@ -1,90 +1,48 @@
---------------------------------------------------------------------------------------
-**🧠 GNN Challenge: Graph Classification with Topological Features (Ablation Study)**
---------------------------------------------------------------------------------------
-------------------------------------
-****🎯 Challenge Overview****
------------------------------------
+-------------------------------------------------------------
+GNN Challenge: Graph Classification with Topological Features
+-------------------------------------------------------------
 
-Welcome to the Graph Neural Networks (GNN) Graph Classification Challenge!
+**Overview**
 
-This competition focuses on graph-level classification using message-passing neural networks (MPNNs) with an emphasis on topological (structural) feature augmentation.
-
-Participants are expected to design models that combine:
+This competition studies graph classification using GNNs with explicit topological feature augmentation.
+Participants design models that combine:
 
 Node features
 
 Graph structure
 
-Structural / topological descriptors
+Structural/topological descriptors
 
-to improve classification performance.
+to improve accuracy and robustness.
 
------------------------
-**🧩 Problem Description**
------------------------
-**We use the MUTAG dataset, a standard benchmark dataset for graph classification**.
+**Dataset**
 
-**About MUTAG**
+We use the **MUTAG molecular** graph dataset.
 
-A publicly available molecular graph dataset.
+188 molecular graphs
 
-Contains 188 graphs, where each graph represents a molecule.
+Binary classification task
 
-Binary labels: each graph belongs to one of 2 classes.
+Nodes = atoms, edges = chemical bonds
 
-Nodes represent atoms, and edges represent chemical bonds.
-
-**Official Source**
-
-Available from the TU Dortmund graph dataset collection:
+**Official source:**
 https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip
 
-The dataset can be directly loaded using **PyTorch Geometric** via the TUDataset interface
+The dataset is directly accessible via **PyTorch Geometric** using the TUDataset interface.
+Baseline code provides loaders and splits.
 
-**Each graph represents one molecule.**
+**Node Representation**
 
-Nodes = atoms, edges = chemical bonds.
+Standard Features (Baseline)
 
-Target: Predict whether a molecule belongs to class 0 or class 1 (binary classification).
+Each node contains a one-hot encoding of atom type:
+Carbon, Nitrogen, Oxygen, Fluorine, Chlorine, Bromine, Iodine.
 
-Average nodes per graph ~17 (standard for MUTAG).
+These features capture chemical identity only.
 
-This dataset is included and loaded automatically from TUDataset.
+Topological Features (Augmentation)
 
-Availability:
-
-Provided directly in the repository — no external downloads required.
-
-Baseline code already includes loaders and splits.
-
-✨ Node Features
-🧪 Standard (Baseline) Node Features
-
-Each node starts with only chemical identity information:
-
-One-hot encoding of atom type:
-
-Carbon
-
-Nitrogen
-
-Oxygen
-
-Fluorine
-
-Chlorine
-
-Bromine
-
-Iodine
-
-This is the default node representation provided in the dataset.
-
-Node features/baseline features capture what the atom is but not how it is positioned structurally in it's graph representation.
-
-Topological Features (Structural Augmentation)
-
-To improve representation, we augmented node features with graph structure descriptors. Examples include:
+Nodes may be enriched with structural descriptors such as:
 
 Node degree
 
@@ -92,88 +50,51 @@ Clustering coefficient
 
 Betweenness centrality
 
-PageRank score
+PageRank
 
 k-core number
 
-Other structural properties computed from the graph
+These features encode connectivity and structural role.
 
-These features capture how nodes are connected and their role in graph structure.
+**Goal**: learn both chemical identity and structural context.
 
-Purpose:
-By combining standard and topological features, models can learn both:
+**Perturbation-Based Robustness Evaluation**
 
-✅ Chemical identity (atoms)
-✅ Structural context (how atoms are arranged)
+Models are evaluated on two versions of the same graphs:
 
-This is the core innovation your competition is exploring.
+**Ideal Condition**
 
------------------------------------
-**Perturbations Used in the Competition**
-----------------------------------
-Perturbations Used in the Competition
+Original node features
 
-Participants are evaluated on two versions of the dataset:
+Unmodified graphs
 
-**1️⃣ Ideal Graphs**
+**Perturbed Condition**
 
-Original MUTAG graphs
+Graph structure unchanged
 
-Standard node features (atom identity + optional topology)
+Node features modified using:
 
-**2️⃣ Perturbed Graphs**
+**Feature shift**: +0.3
 
-Same graph structure (edges unchanged)
+**Gaussian noise**: N(0, 0.05²)
 
-Node features are slightly modified with controlled noise
+This simulates realistic feature noise and tests model stability.
 
-**🔧 Type of Perturbation**
+**Robustness metric:**
 
-Small random noise applied to node feature values
-
-Feature values are slightly altered but remain realistic
-
-**Purpose: simulate measurement noise or imperfect data**
-
-**👉 This creates a robustness test:**
-Models should maintain performance even when node features are imperfect.
-Accuracy on clean data vs accuracy on perturbed data
-
-From this, we can compute:
-👉 Robustness gap = performance drop under perturbation
-A strong model:
-✔ performs well on ideal graphs
-✔ remains stable under feature perturbation
-
-----------------------------
-**🔹 Evaluation Conditions**
-------------------------
-
-The test set is evaluated under two conditions:
-
-Condition	Description	Submission File
-```
-🟢 Ideal	Graphs are clean, with no perturbations. Node features exactly as computed.	submissions/ideal_submission.csv
-🔴 Perturbed	Graphs have modified node features to simulate realistic distribution shifts:
-```
-• Feature shift: +0.3
-• Gaussian noise: N(0,0.05^2)
-
-Edges remain unchanged.	submissions/perturbed_submission.csv
-
-⚠️ Participants must submit predictions for both conditions.
-Failing to submit either file will result in a score of N/A for that condition.
-
-Robustness gap:
-
-robustness_gap = F1_ideal - F1_perturbed
+robustness_gap = F1_ideal − F1_perturbed
 
 
 Smaller gaps indicate more robust models.
 
-----------------
-**🧠 Problem Type**
-----------------
+Participants must submit predictions for both conditions:
+
+**submissions/ideal_submission.csv**
+
+**submissions/perturbed_submission.csv**
+-------------
+**Problem Type**
+-------------
 
 Graph Classification
 
@@ -182,7 +103,7 @@ Supervised Learning
 Binary Classification
 
 ---------------------------
-**📚 Relevant GNN Concepts**
+**Relevant GNN Concepts**
 ---------------------------
 
 Use concepts from DGL Lectures 1.1–4.6:
@@ -197,34 +118,6 @@ Graph-level readout (global mean pooling)
 
 Structural / Topological Node Features
 
-Topological descriptors to experiment with:
-
-Node degree
-
-Clustering coefficient
-
-Betweenness centrality
-
-PageRank
-
-k-core number
-
------------
-**📦 Dataset**
------------
-
-Dataset: MUTAG (from TUDataset)
-
-Graphs: 188 molecular graphs
-
-Classes: 2 (binary)
-
-Average nodes per graph: ~17
-
-Edges: Undirected
-
-Source: Automatically downloaded from TUDataset
-
 ----------------
 **🗂️ Data Splits**
 ----------------
@@ -235,57 +128,38 @@ Test	20%
 
 Files in data/:
 
-train.csv → graph indices + labels
+**train.csv **→ graph indices + labels
 
-test.csv → graph indices only (labels hidden)
+**test.csv** → graph indices only (labels hidden)
 
 ⚠️ Test labels are hidden and used only by the organisers for evaluation.
-
------------------------
-**📊 Evaluation Metric**
------------------------
-
-Primary Metric: Macro F1-score
-
-f1_score(y_true, y_pred, average="macro")
-
-
-Why Macro F1?
-
-Sensitive to class imbalance
-
-Encourages balanced performance across classes
-
-Difficult to optimize directly
-
-Official leaderboard metric
 
 -----------------
 **⚙️ Constraints**
 -----------------
 
-❌ No external datasets
+No external datasets
 
-❌ No pretraining
+No pretraining
 
-❌ No handcrafted features beyond allowed topology features
+No handcrafted features beyond allowed topology features
 
-✅ Only methods covered in DGL Lectures 1.1–4.6
+Only methods covered in DGL Lectures 1.1–4.6
 
-⏱ Models must run within 10 minutes on CPU
+Models must run within 10 minutes on CPU
 
-✅ Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
+Any GNN architecture allowed (GIN, GCN, GraphSAGE, etc.)
 
 --------------------
-**🚀 Getting Started**
+**Getting Started**
 --------------------
 
-1️⃣ Install Dependencies
+1️  Install Dependencies
 
 **pip install -r requirements.txt**
 
 
-2️⃣ Run the Baseline Model
+2️ Run the Baseline Model
 
 **cd starter_code**
 
@@ -313,7 +187,7 @@ Save submission files to submissions/
 > In short: **Develop your model in `model.py` only. Everything else is handled by the baseline and organiser pipeline.**
 ```
 ---------------------
-**📤 Submission Format**
+** Submission Format**
 ---------------------
 
 Participants must submit two CSV files:
@@ -345,7 +219,7 @@ graph_index → Index of the graph
 target → Predicted class label (0 or 1)
 
 -----------------------------------
-**🏆 Leaderboard & Submission Notes**
+** Leaderboard & Submission Notes**
 -----------------------------------
 
 Submissions are collected, but scores are NOT displayed immediately.
@@ -354,11 +228,11 @@ Leaderboard updates are controlled by organisers using hidden test labels stored
 
 After submission, you will only see:
 
-✅ Submission successful
+Submission successful
 
 Scores, robustness gap, and rank are updated later by organisers.
 
-Leaderboard file: leaderboard/leaderboard.md
+**Leaderboard file**: leaderboard/leaderboard.md
 
 Score calculation:
 
@@ -367,7 +241,7 @@ Macro F1-score for ideal and perturbed
 Robustness gap = F1_ideal - F1_perturbed
 
 -----------------------------
-**💡 Tips for Success**
+** Tips for Success**
 -----------------------------
 
 Structural features are crucial
@@ -380,7 +254,7 @@ Simpler models often generalize better
 
 GIN + structural features is a strong baseline
 -------------------------
-**📁 Repository Structure**
+** Repository Structure**
 --------------------------
 ```
 gnn-topology-ablation/
@@ -408,7 +282,7 @@ gnn-topology-ablation/
 ```
 
 --------------------------
-🏁 Step-by-Step Commands
+ Step-by-Step Commands
 -------------------------
 
 1. **Enter starter code**
@@ -432,14 +306,14 @@ gnn-topology-ablation/
     python scoring_script.py --participant "YourTeamName"
 
 ----------------
-📬 Contact
+  Contact
 ----------------
 
 For questions or clarifications, open a GitHub Issue in this repository. Or you can contact me at, idrees11@yahoo.com (+918123434057)
 
 -------------------
 
-**📜 License**
+** License**
 
 -------------------
 
