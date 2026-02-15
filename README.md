@@ -19,12 +19,10 @@ Structural / topological descriptors
 
 to improve classification performance.
 
-The challenge uses the MUTAG dataset, which is small but non-trivial, requiring careful use of topological features for strong results.
-
 -----------------------
 **🧩 Problem Description**
 -----------------------
-**We use the MUTAG dataset — a standard benchmark dataset for graph classification**.
+**We use the MUTAG dataset, a standard benchmark dataset for graph classification**.
 
 **About MUTAG**
 
