@@ -36,8 +36,74 @@ Basic node features
 Your goal:
 
 Build a GNN that effectively leverages graph topology, especially via structural/topological node feature augmentation.
-
+-------------------------
+**Dataset Description**
 ------------------------
+This competition uses the MUTAG molecular graph dataset for binary graph classification.
+Each sample is a graph representing a molecule:
+
+Nodes → atoms
+
+Edges → chemical bonds
+
+Label → class of the molecule
+
+The task is to predict the correct class for each molecular graph using Graph Neural Networks.
+Dataset Availability
+
+The dataset is provided directly in the competition repository.
+
+**Participants receive:**
+
+Graph structure (edge connections)
+
+Node features (baseline atom features)
+
+Files for evaluation on clean and perturbed graphs
+
+No external data or pretrained models are allowed to ensure fair comparison of methods.
+Standard Node Features (Baseline)
+
+**Each node initially contains chemical identity information only:**
+
+One-hot encoding of atom type
+
+Carbon
+
+Nitrogen
+
+Oxygen
+
+Fluorine
+
+Chlorine
+
+Bromine
+
+Iodine
+
+**Topological Features (Structural Augmentation)**
+
+Examples include:
+
+Node degree
+
+Clustering coefficient
+
+Centrality measures
+
+PageRank
+
+Other structural properties derived from graph connectivity
+-------------------------------
+**Key Idea of the Competition**
+-----------------------------
+The study evaluates:
+👉 How structural (topological) information improves graph classification
+👉 How robust models remain when features are slightly perturbed
+👉 The performance gap between standard features vs structure-aware representations
+
+
 **🔹 Evaluation Conditions**
 ------------------------
 
