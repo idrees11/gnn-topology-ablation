@@ -89,9 +89,10 @@ Smaller gaps indicate more robust models.
 
 Participants must submit predictions for both conditions:
 
-**submissions/ideal_submission.csv**
+submissions/ideal_submission.csv
 
-**submissions/perturbed_submission.csv**
+submissions/perturbed_submission.csv
+
 -------------
 **Problem Type**
 -------------
