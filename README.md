@@ -24,49 +24,47 @@ The challenge uses the MUTAG dataset, which is small but non-trivial, requiring 
 -----------------------
 **🧩 Problem Description**
 -----------------------
+**We use the MUTAG dataset — a standard benchmark dataset for graph classification**.
 
-Predict a graph-level class label for each molecular graph.
+**About MUTAG**
 
-You are given:
+A publicly available molecular graph dataset.
 
-The graph topology (nodes & edges)
+Contains 188 graphs, where each graph represents a molecule.
 
-Basic node features
+Binary labels: each graph belongs to one of 2 classes.
 
-Your goal:
+Nodes represent atoms, and edges represent chemical bonds.
 
-Build a GNN that effectively leverages graph topology, especially via structural/topological node feature augmentation.
--------------------------
-**Dataset Description**
-------------------------
-This competition uses the MUTAG molecular graph dataset for binary graph classification.
-Each sample is a graph representing a molecule:
+**Official Source**
 
-Nodes → atoms
+Available from the TU Dortmund graph dataset collection:
+https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip
 
-Edges → chemical bonds
+The dataset can be directly loaded using **PyTorch Geometric** via the TUDataset interface
 
-Label → class of the molecule
+**Each graph represents one molecule.**
 
-The task is to predict the correct class for each molecular graph using Graph Neural Networks.
-Dataset Availability
+Nodes = atoms, edges = chemical bonds.
 
-The dataset is provided directly in the competition repository.
+Target: Predict whether a molecule belongs to class 0 or class 1 (binary classification).
 
-**Participants receive:**
+Average nodes per graph ~17 (standard for MUTAG).
 
-Graph structure (edge connections)
+This dataset is included and loaded automatically from TUDataset.
 
-Node features (baseline atom features)
+Availability:
 
-Files for evaluation on clean and perturbed graphs
+Provided directly in the repository — no external downloads required.
 
-No external data or pretrained models are allowed to ensure fair comparison of methods.
-Standard Node Features (Baseline)
+Baseline code already includes loaders and splits.
 
-**Each node initially contains chemical identity information only:**
+✨ Node Features
+🧪 Standard (Baseline) Node Features
 
-One-hot encoding of atom type
+Each node starts with only chemical identity information:
+
+One-hot encoding of atom type:
 
 Carbon
 
@@ -82,28 +80,74 @@ Bromine
 
 Iodine
 
-**Topological Features (Structural Augmentation)**
+This is the default node representation provided in the dataset.
 
-Examples include:
+Node features/baseline features capture what the atom is but not how it is positioned structurally in it's graph representation.
+
+Topological Features (Structural Augmentation)
+
+To improve representation, we augmented node features with graph structure descriptors. Examples include:
 
 Node degree
 
 Clustering coefficient
 
-Centrality measures
+Betweenness centrality
 
-PageRank
+PageRank score
 
-Other structural properties derived from graph connectivity
--------------------------------
-**Key Idea of the Competition**
------------------------------
-The study evaluates:
-👉 How structural (topological) information improves graph classification
-👉 How robust models remain when features are slightly perturbed
-👉 The performance gap between standard features vs structure-aware representations
+k-core number
 
+Other structural properties computed from the graph
 
+These features capture how nodes are connected and their role in graph structure.
+
+Purpose:
+By combining standard and topological features, models can learn both:
+
+✅ Chemical identity (atoms)
+✅ Structural context (how atoms are arranged)
+
+This is the core innovation your competition is exploring.
+
+-----------------------------------
+**Perturbations Used in the Competition**
+----------------------------------
+Perturbations Used in the Competition
+
+Participants are evaluated on two versions of the dataset:
+
+**1️⃣ Ideal Graphs**
+
+Original MUTAG graphs
+
+Standard node features (atom identity + optional topology)
+
+**2️⃣ Perturbed Graphs**
+
+Same graph structure (edges unchanged)
+
+Node features are slightly modified with controlled noise
+
+**🔧 Type of Perturbation**
+
+Small random noise applied to node feature values
+
+Feature values are slightly altered but remain realistic
+
+**Purpose: simulate measurement noise or imperfect data**
+
+**👉 This creates a robustness test:**
+Models should maintain performance even when node features are imperfect.
+Accuracy on clean data vs accuracy on perturbed data
+
+From this, we can compute:
+👉 Robustness gap = performance drop under perturbation
+A strong model:
+✔ performs well on ideal graphs
+✔ remains stable under feature perturbation
+
+----------------------------
 **🔹 Evaluation Conditions**
 ------------------------
 
