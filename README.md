@@ -108,6 +108,7 @@ Binary Classification
 ---------------------------
 
 Use concepts from DGL Lectures 1.1–4.6:
+
 (URL: https://www.youtube.com/watch?v=gQRV_jUyaDw&list=PLug43ldmRSo14Y_vt7S6vanPGh-JpHR7T)
 
 Message Passing Neural Networks (MPNNs)
