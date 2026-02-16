@@ -15,7 +15,9 @@ Structural/topological descriptors
 
 to improve accuracy and robustness.
 
+-----------------------
 **Dataset**
+-----------------------
 
 We use the **MUTAG molecular** graph dataset.
 
@@ -57,8 +59,9 @@ k-core number
 These features encode connectivity and structural role.
 
 **Goal**: learn both chemical identity and structural context.
-
+--------------------------------------------------
 **Perturbation-Based Robustness Evaluation**
+--------------------------------------------------
 
 Models are evaluated on two versions of the same graphs:
 
@@ -83,7 +86,6 @@ This simulates realistic feature noise and tests model stability.
 **Robustness metric:**
 
 robustness_gap = F1_ideal − F1_perturbed
-
 
 Smaller gaps indicate more robust models.
 
