@@ -39,12 +39,12 @@ if labels_b64:
         decoded = base64.b64decode(labels_b64)
         truth = pd.read_csv(io.BytesIO(decoded))
         truth.columns = truth.columns.str.strip().str.lower()
-        print("✅ Loaded private labels successfully")
+        print("Loaded private labels successfully")
     except Exception as e:
-        print("❌ Failed to decode private labels:", e)
+        print("Failed to decode private labels:", e)
         truth = None
 else:
-    print("⚠ Private labels unavailable. Scoring skipped.")
+    print("Private labels unavailable. Scoring skipped.")
 
 # ----------------------------
 # Detect truth column
@@ -56,7 +56,7 @@ if truth is not None:
     elif "target" in truth.columns:
         truth_col = "target"
     else:
-        print("❌ Truth file missing 'label' or 'target' column")
+        print("Truth file missing 'label' or 'target' column")
         truth = None
 
 # ----------------------------
@@ -65,7 +65,7 @@ if truth is not None:
 scores = []
 
 if not os.path.exists(SUBMISSIONS_FOLDER):
-    print("❌ submissions folder not found")
+    print("submissions folder not found")
 else:
     print("Files in submissions:", os.listdir(SUBMISSIONS_FOLDER))
 
@@ -73,7 +73,7 @@ else:
         path = os.path.join(SUBMISSIONS_FOLDER, fname)
 
         if not os.path.exists(path):
-            print(f"❌ Missing submission: {fname}")
+            print(f"Missing submission: {fname}")
             scores.append({"submission": fname, "f1_score": None})
             continue
 
@@ -83,7 +83,6 @@ else:
         print(f"\nProcessing {fname} | rows={len(sub)}")
 
         if truth is None:
-            print("Scoring skipped (no private labels)")
             scores.append({"submission": fname, "f1_score": None})
             continue
 
@@ -93,7 +92,7 @@ else:
         elif "id" in truth.columns and "id" in sub.columns:
             id_col = "id"
         else:
-            print(f"❌ ID column mismatch in {fname}")
+            print(f"ID column mismatch in {fname}")
             scores.append({"submission": fname, "f1_score": None})
             continue
 
@@ -119,7 +118,7 @@ else:
         print("Merged rows:", len(merged))
 
         if merged.empty:
-            print(f"❌ No matching IDs for {fname}")
+            print(f"No matching IDs for {fname}")
             scores.append({"submission": fname, "f1_score": None})
             continue
 
@@ -140,33 +139,49 @@ else:
         })
 
 # ----------------------------
-# Save leaderboard CSV
+# Prepare leaderboard entry
 # ----------------------------
 timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
 
 f1_ideal = next((s["f1_score"] for s in scores if s["submission"] == "ideal_submission.csv"), "N/A")
 f1_perturbed = next((s["f1_score"] for s in scores if s["submission"] == "perturbed_submission.csv"), "N/A")
-robustness_gap = round(f1_ideal - f1_perturbed, 6) if isinstance(f1_ideal, float) and isinstance(f1_perturbed, float) else "N/A"
+
+robustness_gap = (
+    round(f1_ideal - f1_perturbed, 6)
+    if isinstance(f1_ideal, float) and isinstance(f1_perturbed, float)
+    else "N/A"
+)
 
 leaderboard_entry = {
     "participant": PARTICIPANT_NAME,
     "f1_ideal": f1_ideal,
     "f1_perturbed": f1_perturbed,
     "robustness_gap": robustness_gap,
-    "timestamp": timestamp
+    "timestamp": timestamp,
+    "branch": os.getenv("GITHUB_REF_NAME", "local_run")
 }
 
-df_leaderboard = pd.DataFrame([leaderboard_entry])
-df_leaderboard.to_csv(LEADERBOARD_FILE, index=False)
-print("Leaderboard saved →", LEADERBOARD_FILE)
+# ----------------------------
+# Save leaderboard CSV (APPEND MODE)
+# ----------------------------
+if os.path.exists(LEADERBOARD_FILE):
+    df_existing = pd.read_csv(LEADERBOARD_FILE)
+    df_new = pd.concat([df_existing, pd.DataFrame([leaderboard_entry])], ignore_index=True)
+else:
+    df_new = pd.DataFrame([leaderboard_entry])
+
+# Optional sorting
+if "f1_ideal" in df_new.columns:
+    df_new = df_new.sort_values(by="f1_ideal", ascending=False)
+
+df_new.to_csv(LEADERBOARD_FILE, index=False)
+print("Leaderboard updated →", LEADERBOARD_FILE)
 
 # ----------------------------
-# Save scores JSON (for leaderboard_system.py)
+# Save scores JSON
 # ----------------------------
-scores_json = [leaderboard_entry]
-
 with open(SCORES_JSON_FILE, "w") as f:
-    json.dump(scores_json, f, indent=2)
+    json.dump([leaderboard_entry], f, indent=2)
 
 print("Scores JSON saved →", SCORES_JSON_FILE)
-print("✅ Scoring complete.")
+print("Scoring complete.")
