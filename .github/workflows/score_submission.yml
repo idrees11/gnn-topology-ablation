@@ -21,9 +21,6 @@ permissions:
 
 jobs:
 
-  # -------------------------------------------------
-  # ✅ Confirm submission received
-  # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -37,24 +34,19 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: "✅ Submission received! Your model will be evaluated on hidden test labels."
+              body: "✅ Submission received! Your model will be evaluated securely on hidden test labels."
             });
 
-  # -------------------------------------------------
-  # ✅ Scoring job
-  # -------------------------------------------------
   scoring:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout organiser main repo
       - name: Checkout organiser repo
         uses: actions/checkout@v4
         with:
           ref: main
 
-      # Step 2: Checkout participant PR repo
       - name: Checkout participant PR
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
@@ -63,7 +55,6 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
-      # Step 3: Copy submissions
       - name: Copy submissions
         run: |
           mkdir -p submissions
@@ -73,21 +64,35 @@ jobs:
             echo "No submissions folder found"
           fi
 
-      # Step 4: Debug view
       - name: Show submissions
         run: ls -R submissions || echo "No submissions found"
 
-      # Step 5: Setup Python
+      # ✅ NEW STEP — Decrypt encrypted submission
+      - name: Decrypt submission if encrypted
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          if [ -f "submissions/ideal_submission.enc" ]; then
+            echo "$PRIVATE_KEY" > private_key.pem
+
+            openssl rsautl -decrypt \
+              -inkey private_key.pem \
+              -in submissions/ideal_submission.enc \
+              -out submissions/ideal_submission.csv
+
+            echo "Decryption successful"
+          else
+            echo "No encrypted file found — assuming plain CSV (legacy support)"
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
-      # Step 6: Install dependencies
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
-      # Step 7: Determine participant name
       - name: Set participant name
         id: participant
         run: |
@@ -97,7 +102,6 @@ jobs:
             echo "participant_name=manual_run" >> $GITHUB_OUTPUT
           fi
 
-      # Step 8: Run scoring
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
@@ -108,12 +112,10 @@ jobs:
             --save-scores scores.json \
             --participant "${{ steps.participant.outputs.participant_name }}"
 
-      # Step 9: Update leaderboard history
       - name: Update leaderboard
         run: |
           python leaderboard/leaderboard_system.py --scores scores.json
 
-      # Step 10: Commit leaderboard safely (NO REBASE CONFLICT)
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
@@ -121,16 +123,11 @@ jobs:
 
           git add leaderboard/
 
-          # commit if changes exist
           if ! git diff --cached --quiet; then
             git commit -m "Update leaderboard history [skip ci]"
           fi
 
-          # stash any remaining changes before pull
           git stash --include-untracked
-
           git pull origin main --no-rebase
-
           git stash pop || true
-
           git push origin main
