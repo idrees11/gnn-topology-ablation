@@ -42,11 +42,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------------------------------
+      # Checkout organiser repo
+      # -------------------------------------------------
       - name: Checkout organiser repo
         uses: actions/checkout@v4
         with:
           ref: main
 
+      # -------------------------------------------------
+      # Checkout participant PR
+      # -------------------------------------------------
       - name: Checkout participant PR
         if: github.event_name == 'pull_request_target'
         uses: actions/checkout@v4
@@ -55,6 +61,9 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           path: participant_repo
 
+      # -------------------------------------------------
+      # Copy submissions
+      # -------------------------------------------------
       - name: Copy submissions
         run: |
           mkdir -p submissions
@@ -62,11 +71,17 @@ jobs:
             cp -r participant_repo/submissions/* submissions/
           else
             echo "No submissions folder found"
+          fi
 
+      # -------------------------------------------------
+      # Show submissions
+      # -------------------------------------------------
       - name: Show submissions
         run: ls -R submissions || echo "No submissions found"
 
-      # ✅ NEW STEP — Decrypt AES-encrypted submission
+      # -------------------------------------------------
+      # ✅ Decrypt AES-encrypted submissions
+      # -------------------------------------------------
       - name: Decrypt submission if encrypted (AES)
         env:
           AES_PASSWORD: ${{ secrets.PRIVATE_KEY }}
@@ -79,6 +94,9 @@ jobs:
             fi
           done
 
+      # -------------------------------------------------
+      # Python setup
+      # -------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -87,6 +105,9 @@ jobs:
       - name: Install dependencies
         run: pip install pandas scikit-learn
 
+      # -------------------------------------------------
+      # Determine participant name
+      # -------------------------------------------------
       - name: Set participant name
         id: participant
         run: |
@@ -95,6 +116,9 @@ jobs:
           else
             echo "participant_name=manual_run" >> $GITHUB_OUTPUT
 
+      # -------------------------------------------------
+      # Run scoring
+      # -------------------------------------------------
       - name: Run scoring
         env:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
@@ -105,10 +129,16 @@ jobs:
             --save-scores scores.json \
             --participant "${{ steps.participant.outputs.participant_name }}"
 
+      # -------------------------------------------------
+      # Update leaderboard
+      # -------------------------------------------------
       - name: Update leaderboard
         run: |
           python leaderboard/leaderboard_system.py --scores scores.json
 
+      # -------------------------------------------------
+      # Commit leaderboard safely
+      # -------------------------------------------------
       - name: Commit leaderboard
         run: |
           git config user.name "github-actions[bot]"
