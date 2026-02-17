@@ -21,6 +21,9 @@ permissions:
 
 jobs:
 
+  # -------------------------------------------------
+  # ✅ Comment on PR feedback
+  # -------------------------------------------------
   pr-feedback:
     if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
@@ -37,11 +40,14 @@ jobs:
               body: "✅ Submission received! Your model will be evaluated securely on hidden test labels."
             });
 
+  # -------------------------------------------------
+  # ✅ Scoring job
+  # -------------------------------------------------
   scoring:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
-
     steps:
+
       # -------------------------------------------------
       # Checkout organiser repo
       # -------------------------------------------------
@@ -62,7 +68,7 @@ jobs:
           path: participant_repo
 
       # -------------------------------------------------
-      # Copy submissions
+      # Copy submissions from participant
       # -------------------------------------------------
       - name: Copy submissions
         run: |
@@ -71,10 +77,9 @@ jobs:
             cp -r participant_repo/submissions/* submissions/
           else
             echo "No submissions folder found"
-          fi
 
       # -------------------------------------------------
-      # Show submissions
+      # Show submissions (debug)
       # -------------------------------------------------
       - name: Show submissions
         run: ls -R submissions || echo "No submissions found"
@@ -82,7 +87,7 @@ jobs:
       # -------------------------------------------------
       # ✅ Decrypt AES-encrypted submissions
       # -------------------------------------------------
-      - name: Decrypt submission if encrypted (AES)
+      - name: Decrypt submissions (AES)
         env:
           AES_PASSWORD: ${{ secrets.PRIVATE_KEY }}
         run: |
@@ -115,7 +120,6 @@ jobs:
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=manual_run" >> $GITHUB_OUTPUT
-          fi
 
       # -------------------------------------------------
       # Run scoring
