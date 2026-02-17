@@ -12,3 +12,4 @@ Best submission per participant based on perturbed performance.
 | Participant | F1 Ideal | F1 Perturbed | Gap | Timestamp |
 |------------|----------|--------------|-----|-----------|
 | idreesphd | 0.40625 | 0.40625 | 0.0 | 2026-02-17 03:47:53 UTC |
+| idreesphd | 0.883077 | 0.24 | 0.643077 | 2026-02-17 04:15:09 UTC |
