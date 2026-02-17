@@ -62,28 +62,22 @@ jobs:
             cp -r participant_repo/submissions/* submissions/
           else
             echo "No submissions folder found"
-          fi
 
       - name: Show submissions
         run: ls -R submissions || echo "No submissions found"
 
-      # ✅ NEW STEP — Decrypt encrypted submission
-      - name: Decrypt submission if encrypted
+      # ✅ NEW STEP — Decrypt AES-encrypted submission
+      - name: Decrypt submission if encrypted (AES)
         env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          AES_PASSWORD: ${{ secrets.PRIVATE_KEY }}
         run: |
-          if [ -f "submissions/ideal_submission.enc" ]; then
-            echo "$PRIVATE_KEY" > private_key.pem
-
-            openssl rsautl -decrypt \
-              -inkey private_key.pem \
-              -in submissions/ideal_submission.enc \
-              -out submissions/ideal_submission.csv
-
-            echo "Decryption successful"
-          else
-            echo "No encrypted file found — assuming plain CSV (legacy support)"
-          fi
+          for file in submissions/*.enc; do
+            if [ -f "$file" ]; then
+              output_file="${file%.enc}.csv"
+              echo "Decrypting $file → $output_file"
+              openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass env:AES_PASSWORD
+            fi
+          done
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -100,7 +94,6 @@ jobs:
             echo "participant_name=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
           else
             echo "participant_name=manual_run" >> $GITHUB_OUTPUT
-          fi
 
       - name: Run scoring
         env:
