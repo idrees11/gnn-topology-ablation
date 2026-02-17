@@ -85,17 +85,27 @@ jobs:
         run: ls -R submissions || echo "No submissions found"
 
       # -------------------------------------------------
-      # ✅ Decrypt AES-encrypted submissions
+      # ✅ Decrypt AES key using organiser private RSA key
+      # -------------------------------------------------
+      - name: Decrypt AES key
+        env:
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key.pem
+          openssl pkeyutl -decrypt -inkey private_key.pem -in submissions/aes_key.enc -out submissions/aes_key.hex
+          echo "AES key decrypted successfully"
+
+      # -------------------------------------------------
+      # ✅ Decrypt all participant CSVs using AES key
       # -------------------------------------------------
       - name: Decrypt submissions (AES)
-        env:
-          AES_PASSWORD: ${{ secrets.PRIVATE_KEY }}
         run: |
           for file in submissions/*.enc; do
-            if [ -f "$file" ]; then
+            # Skip the encrypted AES key file itself
+            if [ "$file" != "submissions/aes_key.enc" ]; then
               output_file="${file%.enc}.csv"
               echo "Decrypting $file → $output_file"
-              openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass env:AES_PASSWORD
+              openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass file:submissions/aes_key.hex
             fi
           done
 
@@ -129,7 +139,6 @@ jobs:
           TEST_LABELS_RAW: ${{ secrets.TEST_LABELS_B64 }}
         run: |
           export TEST_LABELS_B64=$(echo "$TEST_LABELS_RAW" | base64 | tr -d '\n')
-
           python scoring_script.py \
             --save-scores scores.json \
             --participant "${{ steps.participant.outputs.participant_name }}"
