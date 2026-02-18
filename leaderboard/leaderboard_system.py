@@ -149,7 +149,7 @@ def update_leaderboard(scores_file):
     if not scores_file or not os.path.exists(scores_file):
         print("No scores.json found")
         return
-
+ 
     with open(scores_file, "r") as f:
         scores = json.load(f)
 
