@@ -173,7 +173,7 @@ jobs:
             git commit -m "Update leaderboard history [skip ci]"
           fi
 
-          git stash --include-untracked
+          git stash --include-untracked 
           git pull origin main --no-rebase
           git stash pop || true
           git push origin main
