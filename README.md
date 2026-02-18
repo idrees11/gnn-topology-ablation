@@ -112,13 +112,15 @@ graph_index,target
 
 All prediction files must be encrypted before submission.
 
-Encryption design:
+**Encryption design:**
 
+```
 ✔ Prediction files encrypted using AES-256
 ✔ AES key encrypted using RSA public key
 ✔ Only organiser can decrypt submissions
+```
 
-Public key provided in:
+**Public key provided in:**
 
 keys/public_key.pem
 
@@ -130,17 +132,16 @@ Private key is securely stored by organiser and never shared.
 ---------------------
 
 Your Pull Request must contain ONLY:
-
+```
 submissions/ideal_submission.enc
 submissions/perturbed_submission.enc
 submissions/aes_key.enc
-
-❌ Do NOT upload
-
+```
+**❌ Do NOT upload**
+```
 Raw CSV files
-
 AES key .hex files
-
+```
 Unencrypted predictions
 
 -----------------------------------
