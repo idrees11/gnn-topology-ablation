@@ -5,7 +5,7 @@ Best submission per participant based on perturbed performance.
 | Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |
 |------|------------|----------|--------------|----------------|-----------|
 | 1 | idreesphd | 0.40625 | 0.40625 | 0.0 | 2026-02-17 03:47:53 UTC |
-| 2 | manual_run | 0.708711 | 0.24 | 0.468711 | 2026-02-17 08:30:40 UTC |
+| 2 | manual_run | 0.708711 | 0.24 | 0.468711 | 2026-02-18 03:10:13 UTC |
 
 ---
 ### 📜 Submission History
@@ -21,3 +21,4 @@ Best submission per participant based on perturbed performance.
 | manual_run | 0.708711 | 0.24 | 0.468711 | 2026-02-18 03:09:48 UTC |
 | manual_run | 0.708711 | 0.24 | 0.468711 | 2026-02-18 03:10:13 UTC |
 | idreesphd | 0.708711 | 0.24 | 0.468711 | 2026-02-18 03:24:37 UTC |
+| idreesphd | 0.708711 | 0.24 | 0.468711 | 2026-02-18 03:32:47 UTC |
