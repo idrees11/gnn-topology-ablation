@@ -24,7 +24,7 @@ SCORES_JSON_FILE = args.save_scores
 PRIVATE_LABELS_ENV = "TEST_LABELS_B64"
 SUBMISSIONS_FOLDER = "submissions"
 LEADERBOARD_FILE = "leaderboard.csv"
-EXPECTED_FILES = ["ideal_submission.csv", "perturbed_submission.csv"]
+EXPECTED_FILES = ["ideal_submission.enc", "perturbed_submission.enc"]
 
 print("Running scoring_script.py...")
 
