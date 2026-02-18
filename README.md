@@ -37,15 +37,40 @@ Robustness Gap = |Ideal − Perturbed|
 --------------------------
 📂 Repository Structure
 --------------------------
-.github/workflows        → automated scoring pipeline
-keys/public_key.pem      → organiser RSA public key
-submissions/             → encrypted participant submissions
-leaderboard/             → public leaderboard outputs
-data/                    → evaluation dataset
-scoring_script.py        → evaluation logic
-leaderboard_system.py    → leaderboard management
-scores.json              → temporary scoring output
-
+```
+gnn-topology-ablation/
+│
+├── README.md
+├── LICENSE
+├── .gitignore
+├── requirements.txt
+├── scoring_script.py              # Computes F1 scores and robustness gap
+├── leaderboard_system.py          # Leaderboard update engine
+├── scores.json                    # Temporary scoring output (auto-generated)
+│
+├── submissions/                   # Participant encrypted submissions
+│
+├── starter_code/                  # Starter implementation for participants
+│
+├── data/                          # Evaluation dataset
+│   └── TUDataset/
+│       └── MUTAG/
+│
+├── leaderboard/                   # Public leaderboard outputs
+│   ├── leaderboard.md
+│   └── leaderboard_history.csv
+│
+├── keys/                          # Encryption keys
+│   └── public_key.pem             # Organiser RSA public key
+│
+├── .github/
+│   └── workflows/
+│       └── score_submission.yml   # Automated scoring pipeline
+│
+├── readme                         # Additional documentation
+├── train.csv                      # Training data reference
+└── test.csv                       # Test data reference
+```
 --------------------
 ⚙️ Getting Started
 --------------------
