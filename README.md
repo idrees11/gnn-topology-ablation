@@ -75,22 +75,37 @@ gnn-topology-ablation/
 ⚙️ Getting Started
 --------------------
 
-Clone the repository:
+**Clone the repository:**
 
 git clone https://github.com/idrees11/gnn-topology-ablation.git
-cd gnn-topology-ablation
+
+**cd gnn-topology-ablation**
 
 
-Install dependencies:
+**Install dependencies:**
 
 pip install -r requirements.txt
 
 
-Generate prediction files:
+**Generate prediction files:**
 
 submissions/ideal_submission.csv
+
 submissions/perturbed_submission.csv
 
+**Format of these files should be**
+
+```
+graph_index	target
+
+160,1
+62,0
+48,0
+173,1
+109,1
+129,0
+.....
+```
 ---------------------------------------------------
 🔐 Secure Submission Format (AES + RSA Encryption)
 ---------------------------------------------------
