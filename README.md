@@ -13,7 +13,7 @@ Repository hosted on GitHub.
 🎯 Objective
 ---------------
 
-Participants must generate predictions for two settings:
+Participants must generate predictions for two settings: 
 ```
 ✅ Ideal graph topology
 ✅ Perturbed graph topology
