@@ -77,7 +77,7 @@ gnn-topology-ablation/
 
 **Clone the repository:**
 
-git clone https://github.com/idrees11/gnn-topology-ablation.git
+git clone https://github.com/idrees11/gnn-topology-ablation.git 
 
 **cd gnn-topology-ablation**
 
