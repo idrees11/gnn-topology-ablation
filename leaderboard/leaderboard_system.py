@@ -27,18 +27,22 @@ def load_history():
 
 
 # -------------------------------------------------
-# Append new score entry (NO OVERWRITE EVER)
+# Append new score entries safely
 # -------------------------------------------------
-def append_score(entry):
-    df = load_history()
-    df = pd.concat([df, pd.DataFrame([entry])], ignore_index=True)
-    df.to_csv(LEADERBOARD_HISTORY, index=False)
+def append_scores(entries):
+    history_df = load_history()
+    new_df = pd.DataFrame(entries)
+    history_df = pd.concat([history_df, new_df], ignore_index=True)
+    history_df.to_csv(LEADERBOARD_HISTORY, index=False)
     print("History updated →", LEADERBOARD_HISTORY)
-    return df
+    return history_df
 
 
 # -------------------------------------------------
 # Keep BEST score per participant
+# Criteria:
+# 1) Highest perturbed score
+# 2) If tie → latest submission wins
 # -------------------------------------------------
 def get_best_scores(df):
     if df.empty:
@@ -46,14 +50,12 @@ def get_best_scores(df):
 
     df = df.copy()
 
-    # Convert numeric safely
     for col in ["f1_ideal", "f1_perturbed", "robustness_gap"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    # Higher perturbed score = more robust model
     df_best = df.sort_values(
-        by="f1_perturbed",
-        ascending=False
+        by=["f1_perturbed", "timestamp"],
+        ascending=[False, False]
     ).drop_duplicates(
         subset=["participant"],
         keep="first"
@@ -66,6 +68,10 @@ def get_best_scores(df):
 # Write leaderboard markdown
 # -------------------------------------------------
 def write_leaderboard_markdown(history_df):
+
+    # Ensure chronological history
+    history_df = history_df.sort_values(by="timestamp")
+
     best_df = get_best_scores(history_df)
 
     with open(LEADERBOARD_MD, "w", encoding="utf-8") as f:
@@ -103,6 +109,7 @@ def write_leaderboard_markdown(history_df):
 # Update leaderboard from scores.json
 # -------------------------------------------------
 def update_leaderboard(scores_file):
+
     if not scores_file or not os.path.exists(scores_file):
         print("No scores.json found")
         return
@@ -110,7 +117,7 @@ def update_leaderboard(scores_file):
     with open(scores_file, "r") as f:
         scores = json.load(f)
 
-    history_df = load_history()
+    new_entries = []
 
     for s in scores:
         entry = {
@@ -123,9 +130,9 @@ def update_leaderboard(scores_file):
                 datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
             )
         }
+        new_entries.append(entry)
 
-        history_df = append_score(entry)
-
+    history_df = append_scores(new_entries)
     write_leaderboard_markdown(history_df)
 
 
