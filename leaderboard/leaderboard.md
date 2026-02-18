@@ -1,6 +1,6 @@
 # 🏆 GNN (Topology Ablation) Robustness Challenge Leaderboard
 
-Best submission per participant based on perturbed performance.
+**Best submission per participant based on perturbed performance.**
 
 | Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |
 |------|------------|----------|--------------|----------------|-----------|
