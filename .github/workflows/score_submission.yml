@@ -1,4 +1,4 @@
-name: Score Submissions
+name: Score Submissions 
 
 on:
   pull_request_target:
