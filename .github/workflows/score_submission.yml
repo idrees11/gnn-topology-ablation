@@ -68,15 +68,18 @@ jobs:
           path: participant_repo
 
       # -------------------------------------------------
-      # Copy submissions from participant
+      # Copy only ideal and perturbed submissions
       # -------------------------------------------------
       - name: Copy submissions
         run: |
           mkdir -p submissions
-          if [ -d "participant_repo/submissions" ]; then
-            cp -r participant_repo/submissions/* submissions/
-          else
-            echo "No submissions folder found"
+          for file in ideal_submission.csv perturbed_submission.csv; do
+            if [ -f "participant_repo/submissions/$file" ]; then
+              cp "participant_repo/submissions/$file" submissions/
+            else
+              echo "Missing submission: $file"
+            fi
+          done
 
       # -------------------------------------------------
       # Show submissions (debug)
@@ -85,29 +88,32 @@ jobs:
         run: ls -R submissions || echo "No submissions found"
 
       # -------------------------------------------------
-      # ✅ Decrypt AES key using organiser private RSA key
+      # Decrypt AES key (if applicable)
       # -------------------------------------------------
       - name: Decrypt AES key
         env:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: |
-          echo "$PRIVATE_KEY" > private_key.pem
-          openssl pkeyutl -decrypt -inkey private_key.pem -in submissions/aes_key.enc -out submissions/aes_key.hex
-          echo "AES key decrypted successfully"
+          if [ -f submissions/aes_key.enc ]; then
+            echo "$PRIVATE_KEY" > private_key.pem
+            openssl pkeyutl -decrypt -inkey private_key.pem -in submissions/aes_key.enc -out submissions/aes_key.hex
+            echo "AES key decrypted successfully"
+          else
+            echo "No AES key found, skipping decryption"
+          fi
 
       # -------------------------------------------------
-      # ✅ Decrypt all participant CSVs using AES key
+      # Decrypt all encrypted CSVs (AES)
       # -------------------------------------------------
       - name: Decrypt submissions (AES)
         run: |
           for file in submissions/*.enc; do
-            # Skip the encrypted AES key file itself
             if [ "$file" != "submissions/aes_key.enc" ]; then
               output_file="${file%.enc}.csv"
               echo "Decrypting $file → $output_file"
               openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass file:submissions/aes_key.hex
             fi
-          done
+          done || echo "No encrypted CSVs found"
 
       # -------------------------------------------------
       # Python setup
