@@ -1,0 +1,23 @@
+{
+    "idreesphd": {
+        "participant": "idreesphd",
+        "f1_ideal": 0.40625,
+        "f1_perturbed": 0.40625,
+        "robustness_gap": 0.0,
+        "timestamp": "2026-02-17 03:47:53+00:00"
+    },
+    "mohammadbhatrsh-stack": {
+        "participant": "mohammadbhatrsh-stack",
+        "f1_ideal": 0.708711,
+        "f1_perturbed": 0.24,
+        "robustness_gap": 0.468711,
+        "timestamp": "2026-02-18 14:19:45+00:00"
+    },
+    "manual_run": {
+        "participant": "manual_run",
+        "f1_ideal": 0.708711,
+        "f1_perturbed": 0.24,
+        "robustness_gap": 0.468711,
+        "timestamp": "2026-02-18 03:10:13+00:00"
+    }
+}
