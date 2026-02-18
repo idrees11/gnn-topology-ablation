@@ -150,27 +150,29 @@ Unencrypted predictions
 
 **🔹 Step 1 — Generate AES key**
 
-openssl rand -hex 32 > submissions\aes_key.hex
+           openssl rand -hex 32 > submissions\aes_key.hex
 
 **🔹 Step 2 — Encrypt CSV files using AES key**
 
 **Encrypt ideal predictions:**
 
-openssl enc -aes-256-cbc -pbkdf2 -in submissions\ideal_submission.csv -out submissions\ideal_submission.enc -pass file:submissions\aes_key.hex
+           openssl enc -aes-256-cbc -pbkdf2 -in submissions\ideal_submission.csv -out submissions\ideal_submission.enc -pass  
+           file:submissions\aes_key.hex
 
 
 **Encrypt perturbed predictions:**
 
-openssl enc -aes-256-cbc -pbkdf2 -in submissions\perturbed_submission.csv -out submissions\perturbed_submission.enc -pass file:submissions\aes_key.hex
+           openssl enc -aes-256-cbc -pbkdf2 -in submissions\perturbed_submission.csv -out submissions\perturbed_submission.enc -pass 
+           file:submissions\aes_key.hex
 
 **🔹 Step 3 — Encrypt AES key using organiser RSA public key**
 
-openssl pkeyutl -encrypt -pubin -inkey keys\public_key.pem -in submissions\aes_key.hex -out submissions\aes_key.enc
+           openssl pkeyutl -encrypt -pubin -inkey keys\public_key.pem -in submissions\aes_key.hex -out submissions\aes_key.enc
 
 
 **If multiple AES keys are used:**
 
-openssl pkeyutl -encrypt -pubin -inkey keys\public_key.pem -in submissions\aes_key_perturbed.hex -out submissions\aes_key_perturbed.enc
+           openssl pkeyutl -encrypt -pubin -inkey keys\public_key.pem -in submissions\aes_key_perturbed.hex -out submissions\aes_key_perturbed.enc
 
 -------------------------
 🚀 Submission Procedure
