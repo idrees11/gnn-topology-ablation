@@ -88,7 +88,7 @@ jobs:
         run: ls -R submissions || echo "No submissions found"
 
       # -------------------------------------------------
-      # Decrypt AES key (if applicable)
+      # Decrypt AES key (optional)
       # -------------------------------------------------
       - name: Decrypt AES key
         env:
@@ -103,17 +103,21 @@ jobs:
           fi
 
       # -------------------------------------------------
-      # Decrypt all encrypted CSVs (AES)
+      # Decrypt encrypted CSVs using AES key
       # -------------------------------------------------
       - name: Decrypt submissions (AES)
         run: |
-          for file in submissions/*.enc; do
-            if [ "$file" != "submissions/aes_key.enc" ]; then
-              output_file="${file%.enc}.csv"
-              echo "Decrypting $file → $output_file"
-              openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass file:submissions/aes_key.hex
-            fi
-          done || echo "No encrypted CSVs found"
+          if compgen -G "submissions/*.enc" > /dev/null; then
+            for file in submissions/*.enc; do
+              if [ "$file" != "submissions/aes_key.enc" ]; then
+                output_file="${file%.enc}.csv"
+                echo "Decrypting $file → $output_file"
+                openssl enc -aes-256-cbc -d -pbkdf2 -in "$file" -out "$output_file" -pass file:submissions/aes_key.hex
+              fi
+            done
+          else
+            echo "No encrypted CSVs found, skipping AES decryption"
+          fi
 
       # -------------------------------------------------
       # Python setup
@@ -153,8 +157,7 @@ jobs:
       # Update leaderboard
       # -------------------------------------------------
       - name: Update leaderboard
-        run: |
-          python leaderboard/leaderboard_system.py --scores scores.json
+        run: python leaderboard/leaderboard_system.py --scores scores.json
 
       # -------------------------------------------------
       # Commit leaderboard safely
