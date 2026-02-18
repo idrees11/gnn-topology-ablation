@@ -177,13 +177,13 @@ Unencrypted predictions
 -------------------------
 🚀 Submission Procedure
 -------------------------
-
+```
 1️⃣ Fork the repository
 2️⃣ Place encrypted files inside submissions/
 3️⃣ Create a new branch
 4️⃣ Commit ONLY .enc files
 5️⃣ Open a Pull Request
-
+```
 Submissions are evaluated automatically.
 
 ----------------------------------
@@ -191,13 +191,13 @@ Submissions are evaluated automatically.
 ----------------------------------
 
 When a Pull Request is opened:
-
+```
 1️⃣ AES key is decrypted using organiser private RSA key
 2️⃣ Prediction files are decrypted
 3️⃣ Evaluation metrics are computed
 4️⃣ Scores are written to scores.json
 5️⃣ Leaderboard is updated automatically
-
+```
 Participants never see decrypted predictions.
 
 -----------------------
@@ -210,48 +210,45 @@ leaderboard_system.py
 
 
 It maintains:
-
+```
 ✔ Full submission history
 ✔ Best score per participant
 ✔ Public ranking
-
+```
 Generated outputs:
-
+```
 leaderboard/leaderboard.md
 leaderboard/leaderboard.json
 leaderboard/leaderboard_history.csv
-
-📊 Leaderboard Ranking Logic
+```
+**📊 Leaderboard Ranking Logic**
 
 For each submission the system records:
-
-Participant name
-
-F1 Ideal
-
-F1 Perturbed
-
-Robustness Gap
-
-Timestamp
-
+```
+✔Participant name
+✔F1 Ideal
+✔F1 Perturbed
+✔Robustness Gap
+✔Timestamp
+```
 Best submission per participant is selected using:
 
 Sort priority:
+```
 1) Highest perturbed score
 2) Lowest robustness gap
 3) Latest timestamp
-
+```
 ----------------------
 🔒 Security Guarantee
 ---------------------
-
+```
 ✔ Predictions encrypted locally
 ✔ AES key encrypted using RSA public key
 ✔ Only organiser can decrypt
 ✔ Files visible but unreadable
 ✔ Ensures blind evaluation
-
+```
 ----------------
 📜 License
 ----------------
