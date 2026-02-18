@@ -96,7 +96,7 @@ submissions/perturbed_submission.csv
 **Format of these files should be**
 
 ```
-graph_index	target
+graph_index,target
 
 160,1
 62,0
