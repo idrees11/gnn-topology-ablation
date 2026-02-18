@@ -14,10 +14,10 @@ Repository hosted on GitHub.
 ---------------
 
 Participants must generate predictions for two settings:
-
+```
 ✅ Ideal graph topology
 ✅ Perturbed graph topology
-
+```
 --------------------
 Evaluation metrics:
 -------------------
