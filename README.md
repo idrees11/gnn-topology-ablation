@@ -48,11 +48,13 @@ gnn-topology-ablation/
 ├── leaderboard_system.py          # Leaderboard update engine
 ├── scores.json                    # Temporary scoring output (auto-generated)
 │
-├── submissions/                   # Participant encrypted submissions
+├── submissions/                   # Participant encrypted submissions (.enc files)
 │
 ├── starter_code/                  # Starter implementation for participants
 │
-├── data/                          # Evaluation dataset
+├── data/                          # Evaluation dataset + references
+│   ├── train.csv                  # Training reference file
+│   ├── test.csv                   # Test reference file
 │   └── TUDataset/
 │       └── MUTAG/
 │
@@ -67,9 +69,8 @@ gnn-topology-ablation/
 │   └── workflows/
 │       └── score_submission.yml   # Automated scoring pipeline
 │
-├── readme                         # Additional documentation
-├── train.csv                      # Training data reference
-└── test.csv                       # Test data reference
+└── readme                         # Additional documentation
+
 ```
 --------------------
 ⚙️ Getting Started
