@@ -1,6 +1,6 @@
 # 🏆 GNN Robustness Challenge Leaderboard
 
-Best submission per participant (ranked by perturbed performance).
+**Best submission per participant (ranked by perturbed performance).**
 
 | Rank | Participant | F1 Ideal | F1 Perturbed | Robustness Gap | Timestamp |
 |------|------------|----------|--------------|----------------|-----------|
