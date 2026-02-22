@@ -34,6 +34,7 @@ wo types of feature corruption are applied:
     Random noise is added to each feature:
     x ← x + ϵ,   ϵ ~ N(0, σ²)
     where σ = noise_std (default 0.05)
+
     This simulates noisy feature extraction.
 ```
 --------------------
