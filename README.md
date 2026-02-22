@@ -37,9 +37,21 @@ wo types of feature corruption are applied:
 
     This simulates noisy feature extraction.
 ```
---------------------
-Evaluation metrics:
--------------------
+--------------------------------
+**Purpose of This Perturbation**
+--------------------------------
+```
+This setup evaluates whether a GNN:
+
+✔ relies on exact feature values
+✔ generalizes under feature distribution shift
+✔ remains stable under noisy topological descriptors
+
+The model is trained on clean features and evaluated under corrupted features to measure robustness.
+```
+-----------------------
+**Evaluation metrics:**
+----------------------
 
 F1 Score (Ideal)
 
