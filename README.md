@@ -49,6 +49,40 @@ This setup evaluates whether a GNN:
 
 The model is trained on clean features and evaluated under corrupted features to measure robustness.
 ```
+
+```
+-------------------------
+**📌Dataset Description**
+-------------------------
+```
+We have used MUTAG Dataset: 
+
+MUTAG is a classic benchmark dataset for graph classification originating from chemical informatics research. It consists of molecular graphs representing small chemical compounds, with labels indicating whether each compound exhibits mutagenic effects on a specific bacterium.
+
+**🔗 Official Source**
+
+The dataset is part of the TU Dortmund University graph kernel benchmark collection and can be downloaded from the official TU Dortmund repository:
+📥 https://ls11-www.cs.tu-dortmund.de/people/morris/graphkerneldatasets/MUTAG.zip
+
+**📊 Core Statistics**
+
+Property	Value
+Task	Binary graph classification
+Domain	Chemical compounds (mutagenic vs non-mutagenic)
+# of Graphs	188 graphs (benchmark size)
+Avg. Nodes per Graph	~18 nodes
+Avg. Edges per Graph	~40 edges
+Node/Atom Features	Categorical atom labels (interpreted as features)
+# Classes	2 (mutagenic / non-mutagenic)
+
+Each graph represents a molecule:
+
+Nodes correspond to atoms
+
+Edges correspond to chemical bonds
+
+Graph label indicates whether the molecule is mutagenic to Salmonella typhimurium or not.
+```
 -----------------------
 **Evaluation metrics:**
 ----------------------
