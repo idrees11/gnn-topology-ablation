@@ -60,7 +60,9 @@ MUTAG is a classic benchmark dataset for graph classification originating from c
 It consists of molecular graphs representing small chemical compounds, with labels indicating whether each compound
 exhibits mutagenic effects on a specific bacterium.
 
-**🔗 Official Source**
+```
+
+🔗 Official Source
 
 The dataset is part of the TU Dortmund University graph kernel benchmark collection and can be downloaded from the official TU Dortmund repository:
 
