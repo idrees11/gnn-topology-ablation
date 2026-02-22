@@ -50,15 +50,15 @@ This setup evaluates whether a GNN:
 The model is trained on clean features and evaluated under corrupted features to measure robustness.
 ```
 
-
-
 ----------------------
 📌Dataset Description
 ----------------------
 ```
 We have used MUTAG Dataset: 
 
-MUTAG is a classic benchmark dataset for graph classification originating from chemical informatics research. It consists of molecular graphs representing small chemical compounds, with labels indicating whether each compound exhibits mutagenic effects on a specific bacterium.
+MUTAG is a classic benchmark dataset for graph classification originating from chemical informatics research.
+It consists of molecular graphs representing small chemical compounds, with labels indicating whether each compound
+exhibits mutagenic effects on a specific bacterium.
 
 **🔗 Official Source**
 
