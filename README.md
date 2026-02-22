@@ -83,6 +83,7 @@ Avg. Edges per Graph	~40 edges
 Node/Atom Features	    Categorical atom labels (interpreted as features)
 
 # Classes	            2 (mutagenic / non-mutagenic)
+```
 
 Each graph represents a molecule:
 
@@ -91,7 +92,7 @@ Nodes correspond to atoms
 Edges correspond to chemical bonds
 
 Graph label indicates whether the molecule is mutagenic to Salmonella typhimurium or not.
-```
+
 -----------------------
 **Evaluation metrics:**
 ----------------------
