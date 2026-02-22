@@ -315,6 +315,9 @@ Sort priority:
 2) Lowest robustness gap
 3) Latest timestamp
 ```
+Track Live leaderboard: [Leaderboard](leaderboard/leaderboard.md)
+
+https://github.com/idrees11/gnn-topology-ablation/blob/main/leaderboard/leaderboard.md
 ----------------------
 🔒 Security Guarantee
 ---------------------
@@ -325,8 +328,6 @@ Sort priority:
 ✔ Files visible but unreadable
 ✔ Ensures blind evaluation
 ```
-Live leaderboard: https://github.com/idrees11/gnn-topology-ablation/blob/main/leaderboard/leaderboard.md
-
 ----------------
 📜 License
 ----------------
