@@ -29,6 +29,7 @@ wo types of feature corruption are applied:
     where δ = feature_shift (default 0.3)
 
     This simulates systematic measurement bias or domain shift.
+
 2️⃣ Gaussian Noise Injection
     Random noise is added to each feature:
     x ← x + ϵ,   ϵ ~ N(0, σ²)
