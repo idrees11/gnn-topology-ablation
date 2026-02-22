@@ -18,6 +18,23 @@ Participants must generate predictions for two settings:
 ✅ Ideal graph topology
 ✅ Perturbed graph topology
 ```
+------------------------------
+**⚙️ Perturbation Mechanism**
+------------------------------
+wo types of feature corruption are applied:
+```
+1️⃣ Distribution Shift
+    A constant offset is added to node features:
+    x ← x + δ
+    where δ = feature_shift (default 0.3)
+
+    This simulates systematic measurement bias or domain shift.
+2️⃣ Gaussian Noise Injection
+    Random noise is added to each feature:
+    x ← x + ϵ,   ϵ ~ N(0, σ²)
+    where σ = noise_std (default 0.05)
+    This simulates noisy feature extraction.
+```
 --------------------
 Evaluation metrics:
 -------------------
