@@ -325,6 +325,8 @@ Sort priority:
 ✔ Files visible but unreadable
 ✔ Ensures blind evaluation
 ```
+Live leaderboard: https://github.com/idrees11/gnn-topology-ablation/blob/main/leaderboard/leaderboard.md
+
 ----------------
 📜 License
 ----------------
