@@ -52,9 +52,9 @@ The model is trained on clean features and evaluated under corrupted features to
 
 ```
 
--------------------------
-**📌Dataset Description**
--------------------------
+----------------------
+📌Dataset Description
+----------------------
 ```
 We have used MUTAG Dataset: 
 
